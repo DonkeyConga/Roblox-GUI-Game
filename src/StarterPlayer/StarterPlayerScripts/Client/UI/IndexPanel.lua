@@ -3,7 +3,11 @@
 -- Tap a discovered title to equip it (tap again to unequip). state is the
 -- same mutable table MainUI feeds from DataSync, so click handlers can read
 -- current discovery/equip status live without waiting for a fresh Refresh.
+-- Discovered entries get a permanent rarity-tinted border; the currently
+-- equipped one gets a full pulsing glow (a cycling rainbow for Secret titles).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
 local Titles = require(ReplicatedStorage.Shared.Titles)
 local Rarities = require(ReplicatedStorage.Shared.Rarities)
@@ -19,12 +23,10 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 		Parent = parent,
 	})
 
-	local header = UIFactory.Label({
+	local header = UIFactory.Title({
 		Text = "Title Index — 0%",
-		Font = Theme.Font,
-		TextSize = 22,
-		Size = UDim2.new(1, 0, 0, 30),
-		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 24,
+		Size = UDim2.new(1, 0, 0, 34),
 		Parent = frame,
 	})
 
@@ -32,24 +34,25 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 		Text = "Tap a discovered title to equip it. Tap again to unequip.",
 		TextColor3 = Theme.SubText,
 		TextSize = 13,
-		Size = UDim2.new(1, 0, 0, 18),
-		Position = UDim2.new(0, 0, 0, 30),
 		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.new(1, 0, 0, 18),
+		Position = UDim2.new(0, 0, 0, 34),
 		Parent = frame,
 	})
 
 	local scroll = Instance.new("ScrollingFrame")
-	scroll.Size = UDim2.new(1, 0, 1, -54)
-	scroll.Position = UDim2.new(0, 0, 0, 54)
+	scroll.Size = UDim2.new(1, 0, 1, -58)
+	scroll.Position = UDim2.new(0, 0, 0, 58)
 	scroll.BackgroundTransparency = 1
 	scroll.BorderSizePixel = 0
 	scroll.ScrollBarThickness = 6
+	scroll.ScrollBarImageColor3 = Theme.Accent
 	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	scroll.Parent = frame
 
 	local listLayout = Instance.new("UIListLayout")
-	listLayout.Padding = UDim.new(0, 12)
+	listLayout.Padding = UDim.new(0, 14)
 	listLayout.Parent = scroll
 
 	local entryByTitleId = {}
@@ -70,7 +73,14 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 			Font = Theme.Font,
 			TextSize = 18,
 			TextColor3 = rarity.Color,
-			Size = UDim2.new(1, 0, 0, 26),
+			Size = UDim2.new(1, 0, 0, 24),
+			Parent = section,
+		})
+
+		UIFactory.Frame({
+			Size = UDim2.new(1, 0, 0, 2),
+			BackgroundColor3 = rarity.Color,
+			BackgroundTransparency = 0.4,
 			Parent = section,
 		})
 
@@ -78,6 +88,7 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 			Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 0, 0, 8),
 			Parent = section,
 		})
 		local gridLayout = Instance.new("UIGridLayout")
@@ -98,7 +109,7 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 				local stroke = Instance.new("UIStroke")
 				stroke.Thickness = 2
 				stroke.Color = rarity.Color
-				stroke.Transparency = 1
+				stroke.Transparency = 0.92
 				stroke.Parent = entry
 
 				local label = UIFactory.Label({
@@ -132,6 +143,21 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 		end
 	end
 
+	local currentEquippedId: string? = nil
+	local equippedPulseTween: Tween? = nil
+	local equippedRainbowConn: RBXScriptConnection? = nil
+
+	local function clearEquippedEffect()
+		if equippedPulseTween then
+			equippedPulseTween:Cancel()
+			equippedPulseTween = nil
+		end
+		if equippedRainbowConn then
+			equippedRainbowConn:Disconnect()
+			equippedRainbowConn = nil
+		end
+	end
+
 	-- Exclusive titles (VIP, etc.) are shown so they can be equipped once granted,
 	-- but they don't count toward the Index completion percentage — they were
 	-- never rollable in the first place.
@@ -157,8 +183,39 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 				info.Label.Text = "???"
 				info.Label.TextColor3 = Theme.SubText
 			end
-			info.Stroke.Transparency = (newState.EquippedTitle == titleId) and 0 or 1
+
+			-- The currently-equipped entry's stroke is fully owned by the
+			-- equip-effect block below; leave it alone here.
+			if titleId ~= newState.EquippedTitle then
+				info.Stroke.Color = info.Rarity.Color
+				info.Stroke.Thickness = 2
+				info.Stroke.Transparency = isDiscovered and 0.55 or 0.92
+			end
 		end
+
+		if newState.EquippedTitle ~= currentEquippedId then
+			clearEquippedEffect()
+			currentEquippedId = newState.EquippedTitle
+			local info = currentEquippedId and entryByTitleId[currentEquippedId]
+			if info then
+				info.Stroke.Thickness = 3
+				info.Stroke.Transparency = 0
+				if info.Rarity.Name == "Secret" then
+					equippedRainbowConn = RunService.Heartbeat:Connect(function()
+						info.Stroke.Color = Color3.fromHSV((tick() * 0.2) % 1, 0.8, 1)
+					end)
+				else
+					info.Stroke.Color = info.Rarity.Color
+					equippedPulseTween = TweenService:Create(
+						info.Stroke,
+						TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+						{ Transparency = 0.45 }
+					)
+					equippedPulseTween:Play()
+				end
+			end
+		end
+
 		local percent = total > 0 and math.floor((discovered / total) * 100) or 0
 		header.Text = `Title Index — {percent}% ({discovered}/{total})`
 	end

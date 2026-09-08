@@ -8,12 +8,11 @@ local QuestPanel = {}
 local Theme = UIFactory.Theme
 
 local function createQuestEntry(parent: Instance, layoutOrder: number)
-	local entry = UIFactory.Frame({
+	local entry = UIFactory.Card({
 		Size = UDim2.new(1, 0, 0, 80),
 		LayoutOrder = layoutOrder,
 		Parent = parent,
 	})
-	UIFactory.Corner(10).Parent = entry
 	UIFactory.Padding(10).Parent = entry
 
 	local desc = UIFactory.Label({
@@ -64,6 +63,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 	scroll.BackgroundTransparency = 1
 	scroll.BorderSizePixel = 0
 	scroll.ScrollBarThickness = 6
+	scroll.ScrollBarImageColor3 = Theme.Accent
 	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	scroll.Parent = frame
@@ -72,19 +72,19 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 	listLayout.Padding = UDim.new(0, 10)
 	listLayout.Parent = scroll
 
-	UIFactory.Label({
-		Text = "Daily Quests",
-		Font = Theme.Font,
+	UIFactory.Title({
+		Text = "📜 Daily Quests",
 		TextSize = 20,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		LayoutOrder = 0,
 		Size = UDim2.new(1, 0, 0, 28),
 		Parent = scroll,
 	})
 
-	UIFactory.Label({
-		Text = "Achievements",
-		Font = Theme.Font,
+	UIFactory.Title({
+		Text = "🏆 Achievements",
 		TextSize = 20,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		LayoutOrder = 100,
 		Size = UDim2.new(1, 0, 0, 28),
 		Parent = scroll,
@@ -114,16 +114,13 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 
 			if questInfo.Claimed then
 				entryData.ClaimButton.Text = "Claimed"
-				entryData.ClaimButton.Active = false
-				entryData.ClaimButton.BackgroundColor3 = Theme.PanelLight
+				UIFactory.SetButtonState(entryData.ClaimButton, "Disabled")
 			elseif questInfo.Progress >= questInfo.Target then
 				entryData.ClaimButton.Text = "Claim"
-				entryData.ClaimButton.Active = true
-				entryData.ClaimButton.BackgroundColor3 = Theme.Success
+				UIFactory.SetButtonState(entryData.ClaimButton, "Success")
 			else
 				entryData.ClaimButton.Text = "..."
-				entryData.ClaimButton.Active = false
-				entryData.ClaimButton.BackgroundColor3 = Theme.PanelLight
+				UIFactory.SetButtonState(entryData.ClaimButton, "Disabled")
 			end
 		end
 
@@ -145,6 +142,8 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 				})
 				local rewardLabel = UIFactory.Label({
 					Text = "",
+					TextColor3 = Theme.Accent,
+					Font = Theme.FontMedium,
 					TextXAlignment = Enum.TextXAlignment.Right,
 					Size = UDim2.new(0, 70, 1, 0),
 					Position = UDim2.new(1, -80, 0, 0),
@@ -158,7 +157,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 			rowData.Label.Text = (achievementInfo.Completed and "✓ " or "• ") .. achievementInfo.Description
 			rowData.Label.TextColor3 = achievementInfo.Completed and Theme.Success or Theme.SubText
 			rowData.RewardLabel.Text = tostring(achievementInfo.Reward) .. " 🪙"
-			rowData.RewardLabel.TextColor3 = achievementInfo.Completed and Theme.Success or Theme.SubText
+			rowData.RewardLabel.TextColor3 = achievementInfo.Completed and Theme.Accent or Theme.SubText
 			rowData.Row.BackgroundColor3 = achievementInfo.Completed and Theme.PanelLight or Theme.Panel
 		end
 	end

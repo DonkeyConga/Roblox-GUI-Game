@@ -1,7 +1,11 @@
 --!strict
 -- The main screen: big Roll button, pity progress, result reveal, Auto-Roll toggle.
+-- The reveal card's border color/glow reacts to the rolled rarity, topped off
+-- with an expanding "burst ring" and — for the rarest pulls — a cycling
+-- rainbow border, so the moment of the roll is the visual high point of the UI.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
 local Titles = require(ReplicatedStorage.Shared.Titles)
@@ -9,6 +13,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 
 local RollPanel = {}
 local Theme = UIFactory.Theme
+
+local EPIC_MIN_INDEX = Config.PityMinRarityIndex
 
 local titleById = {}
 for _, title in Titles do
@@ -23,18 +29,17 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		Parent = parent,
 	})
 
-	local resultCard = UIFactory.Frame({
+	local resultCard = UIFactory.Card({
 		Size = UDim2.new(0, 420, 0, 140),
 		Position = UDim2.new(0.5, -210, 0, 20),
 		Parent = frame,
 	})
-	UIFactory.Corner(16).Parent = resultCard
+	local resultStroke = resultCard:FindFirstChildOfClass("UIStroke") :: UIStroke
+	resultStroke.Thickness = 2
 
-	local resultTitle = UIFactory.Label({
+	local resultTitle = UIFactory.Title({
 		Text = "Roll to reveal your title!",
-		Font = Theme.Font,
 		TextSize = 26,
-		TextXAlignment = Enum.TextXAlignment.Center,
 		Size = UDim2.new(1, -20, 0, 50),
 		Position = UDim2.new(0, 10, 0, 20),
 		Parent = resultCard,
@@ -42,7 +47,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 
 	local resultRarity = UIFactory.Label({
 		Text = "",
-		Font = Theme.FontRegular,
+		Font = Theme.FontMedium,
 		TextSize = 18,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Size = UDim2.new(1, -20, 0, 30),
@@ -81,7 +86,6 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 
 	local rollButton = UIFactory.Button({
 		Text = `ROLL — {Config.BaseRollCost} 🪙`,
-		Font = Theme.Font,
 		TextSize = 28,
 		Size = UDim2.new(0, 280, 0, 70),
 		Position = UDim2.new(0.5, -140, 0, 230),
@@ -97,11 +101,10 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		Parent = frame,
 	})
 
-	local autoRollToggle = UIFactory.Button({
+	local autoRollToggle, setAutoRollActive = UIFactory.NavButton({
 		Text = "Enable Auto-Roll",
 		Size = UDim2.new(0, 220, 0, 44),
 		Position = UDim2.new(0.5, -110, 0, 360),
-		BackgroundColor3 = Theme.PanelLight,
 		Parent = frame,
 	})
 
@@ -115,6 +118,47 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		Parent = frame,
 	})
 
+	local pulseTween: Tween? = nil
+	local rainbowConn: RBXScriptConnection? = nil
+
+	local function clearRevealEffect()
+		if pulseTween then
+			pulseTween:Cancel()
+			pulseTween = nil
+		end
+		if rainbowConn then
+			rainbowConn:Disconnect()
+			rainbowConn = nil
+		end
+	end
+
+	-- A ring that blooms outward from the card and fades — bigger for rarer pulls.
+	local function spawnBurstRing(color: Color3, big: boolean)
+		local ring = Instance.new("Frame")
+		ring.AnchorPoint = Vector2.new(0.5, 0.5)
+		ring.Position = UDim2.new(0.5, 0, 0, 90)
+		ring.Size = UDim2.new(0, 40, 0, 40)
+		ring.BackgroundColor3 = color
+		ring.BackgroundTransparency = 0.15
+		ring.BorderSizePixel = 0
+		ring.ZIndex = resultCard.ZIndex - 1
+		ring.Parent = frame
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = ring
+
+		local targetSize = big and 620 or 400
+		TweenService:Create(
+			ring,
+			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Size = UDim2.new(0, targetSize, 0, targetSize), BackgroundTransparency = 1 }
+		):Play()
+		task.delay(0.65, function()
+			ring:Destroy()
+		end)
+	end
+
 	function RollPanel.PlayRollResult(result)
 		local rarity = result.Rarity
 		resultTitle.Text = result.Title.Name
@@ -123,12 +167,32 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		resultRarity.TextColor3 = rarity.Color
 		newBadge.Visible = result.IsNew
 
-		resultCard.BackgroundColor3 = Theme.Panel
-		local flashIn = TweenService:Create(resultCard, TweenInfo.new(0.15), { BackgroundColor3 = rarity.Color })
-		flashIn.Completed:Connect(function()
-			TweenService:Create(resultCard, TweenInfo.new(0.4), { BackgroundColor3 = Theme.Panel }):Play()
-		end)
-		flashIn:Play()
+		clearRevealEffect()
+		local isEpicPlus = rarity.Index >= EPIC_MIN_INDEX
+		if rarity.Name == "Secret" then
+			resultStroke.Thickness = 3
+			resultStroke.Transparency = 0
+			rainbowConn = RunService.Heartbeat:Connect(function()
+				resultStroke.Color = Color3.fromHSV((tick() * 0.2) % 1, 0.8, 1)
+			end)
+		else
+			resultStroke.Color = rarity.Color
+			resultStroke.Thickness = isEpicPlus and 3 or 2
+			resultStroke.Transparency = 0.2
+			if isEpicPlus then
+				pulseTween = TweenService:Create(
+					resultStroke,
+					TweenInfo.new(0.75, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+					{ Transparency = 0.75 }
+				)
+				pulseTween:Play()
+			end
+		end
+
+		spawnBurstRing(rarity.Color, isEpicPlus)
+		if isEpicPlus then
+			spawnBurstRing(rarity.Color, false)
+		end
 
 		if result.SetBonusGranted then
 			notification.Show(`Full {rarity.Name} collection bonus unlocked! +Luck`, "Success")
@@ -161,8 +225,8 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		rollButton.Text = `ROLL — {newState.RollCost} 🪙`
 		pityLabel.Text = `Pity: {newState.RollsSincePity} / {Config.PityRollThreshold}`
 		setPityFraction(newState.RollsSincePity / Config.PityRollThreshold)
-		autoRollToggle.Text = newState.AutoRollEnabled and "Disable Auto-Roll" or "Enable Auto-Roll"
-		autoRollToggle.BackgroundColor3 = newState.AutoRollEnabled and Theme.Success or Theme.PanelLight
+		autoRollToggle.Text = newState.AutoRollEnabled and "Auto-Roll: ON" or "Enable Auto-Roll"
+		setAutoRollActive(newState.AutoRollEnabled)
 
 		local title = newState.EquippedTitle and titleById[newState.EquippedTitle]
 		equippedLabel.Text = title and ("Equipped: " .. title.Name) or "Equipped: None"

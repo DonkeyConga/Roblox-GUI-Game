@@ -14,13 +14,26 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 		Parent = parent,
 	})
 
-	UIFactory.Label({
-		Text = "Rebirth",
-		Font = Theme.Font,
-		TextSize = 26,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Size = UDim2.new(1, 0, 0, 40),
+	local card = UIFactory.Card({
+		Size = UDim2.new(0, 480, 0, 320),
+		Position = UDim2.new(0.5, -240, 0, 20),
 		Parent = frame,
+	})
+	UIFactory.UpgradeCardGlow(card, Theme.Violet, 1.5)
+	UIFactory.Padding(24).Parent = card
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 14)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.Parent = card
+
+	UIFactory.Title({
+		Text = "✦ Rebirth",
+		TextSize = 30,
+		TextColor3 = Theme.Violet,
+		Size = UDim2.new(1, 0, 0, 40),
+		LayoutOrder = 1,
+		Parent = card,
 	})
 
 	UIFactory.Label({
@@ -28,9 +41,9 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 		TextColor3 = Theme.SubText,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextWrapped = true,
-		Size = UDim2.new(0, 500, 0, 40),
-		Position = UDim2.new(0.5, -250, 0, 46),
-		Parent = frame,
+		Size = UDim2.new(1, 0, 0, 36),
+		LayoutOrder = 2,
+		Parent = card,
 	})
 
 	local statsLabel = UIFactory.Label({
@@ -38,18 +51,17 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 		TextColor3 = Theme.SubText,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextWrapped = true,
-		Size = UDim2.new(0, 500, 0, 80),
-		Position = UDim2.new(0.5, -250, 0, 96),
-		Parent = frame,
+		Size = UDim2.new(1, 0, 0, 60),
+		LayoutOrder = 3,
+		Parent = card,
 	})
 
 	local rebirthButton = UIFactory.Button({
 		Text = "Rebirth — Requires 0 🪙",
-		Font = Theme.Font,
-		TextSize = 24,
-		Size = UDim2.new(0, 280, 0, 64),
-		Position = UDim2.new(0.5, -140, 0, 190),
-		Parent = frame,
+		TextSize = 22,
+		Size = UDim2.new(1, 0, 0, 64),
+		LayoutOrder = 4,
+		Parent = card,
 	})
 
 	rebirthButton.MouseButton1Click:Connect(function()

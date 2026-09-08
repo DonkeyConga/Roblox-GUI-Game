@@ -14,22 +14,40 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 		Parent = parent,
 	})
 
-	local card = UIFactory.Frame({
-		Size = UDim2.new(0, 420, 0, 320),
+	local card = UIFactory.Card({
+		Size = UDim2.new(0, 420, 0, 340),
 		Position = UDim2.new(0.5, -210, 0, 20),
 		Parent = frame,
 	})
-	UIFactory.Corner(16).Parent = card
-	UIFactory.Padding(20).Parent = card
+	UIFactory.UpgradeCardGlow(card, Theme.Accent, 1.5)
+	UIFactory.Padding(24).Parent = card
+
+	-- A little rotated ribbon banner in the corner, gacha-shop style.
+	local ribbon = UIFactory.Label({
+		Text = "★ VIP ★",
+		Font = Theme.FontDisplay,
+		TextSize = 14,
+		TextColor3 = Theme.TextOnGold,
+		BackgroundColor3 = Theme.Accent,
+		BackgroundTransparency = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(1, -28, 0, 28),
+		Size = UDim2.new(0, 110, 0, 26),
+		Rotation = 35,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 5,
+		Parent = card,
+	})
+	UIFactory.Corner(4).Parent = ribbon
 
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 10)
 	layout.Parent = card
 
-	UIFactory.Label({
+	UIFactory.Title({
 		Text = "⭐ VIP",
-		Font = Theme.Font,
 		TextSize = 26,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.new(1, 0, 0, 34),
 		LayoutOrder = 1,
 		Parent = card,
@@ -53,7 +71,6 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 
 	local buyButton = UIFactory.Button({
 		Text = "Purchase VIP",
-		Font = Theme.Font,
 		TextSize = 20,
 		Size = UDim2.new(1, 0, 0, 50),
 		LayoutOrder = 10,
@@ -73,12 +90,10 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 	function ShopPanel.Refresh(newState)
 		if newState.OwnsVIP then
 			buyButton.Text = "VIP Owned ✓"
-			buyButton.Active = false
-			buyButton.BackgroundColor3 = Theme.Success
+			UIFactory.SetButtonState(buyButton, "Owned")
 		else
 			buyButton.Text = "Purchase VIP"
-			buyButton.Active = true
-			buyButton.BackgroundColor3 = Theme.Accent
+			UIFactory.SetButtonState(buyButton, "Gold")
 		end
 	end
 

@@ -1,7 +1,7 @@
 --!strict
--- Builds the whole ScreenGui: top bar, bottom nav, and the five panels.
--- Owns the single `state` table that every panel reads from and that
--- DataSync keeps up to date in place.
+-- Builds the whole ScreenGui: ambient backdrop, top bar, bottom nav, and the
+-- five panels. Owns the single `state` table that every panel reads from and
+-- that DataSync keeps up to date in place.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
@@ -51,6 +51,8 @@ function MainUI.Init(player: Player, RemoteController)
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent = playerGui
 
+	UIFactory.Backdrop(screenGui)
+
 	local state = {
 		Coins = 0,
 		Rebirths = 0,
@@ -69,30 +71,41 @@ function MainUI.Init(player: Player, RemoteController)
 		CanAutoRoll = false,
 	}
 
-	-- Top bar
+	-- Top bar: gradient banner with a gilded divider line along the bottom edge.
 	local topBar = UIFactory.Frame({
-		Size = UDim2.new(1, 0, 0, 56),
-		BackgroundColor3 = Theme.Background,
+		Size = UDim2.new(1, 0, 0, 58),
+		BackgroundColor3 = Theme.Panel,
 		Parent = screenGui,
 	})
-	UIFactory.Padding(10).Parent = topBar
+	UIFactory.Gradient(ColorSequence.new(Theme.PanelTop, Theme.Panel), 90).Parent = topBar
+	UIFactory.Padding(12).Parent = topBar
+
+	UIFactory.Frame({
+		Size = UDim2.new(1, 0, 0, 2),
+		Position = UDim2.new(0, 0, 1, -2),
+		BackgroundColor3 = Theme.Accent,
+		Parent = topBar,
+	})
+
 	local topLayout = Instance.new("UIListLayout")
 	topLayout.FillDirection = Enum.FillDirection.Horizontal
 	topLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	topLayout.Padding = UDim.new(0, 16)
+	topLayout.Padding = UDim.new(0, 20)
 	topLayout.Parent = topBar
 
 	local coinsLabel = UIFactory.Label({
 		Text = "🪙 0",
-		Font = Theme.Font,
-		TextSize = 20,
+		Font = Theme.FontDisplay,
+		TextColor3 = Theme.Accent,
+		TextSize = 22,
 		Size = UDim2.new(0, 160, 1, 0),
 		Parent = topBar,
 	})
 
 	local rebirthsLabel = UIFactory.Label({
 		Text = "✦ Rebirths: 0",
-		Font = Theme.Font,
+		Font = Theme.FontDisplay,
+		TextColor3 = Theme.Violet,
 		TextSize = 20,
 		Size = UDim2.new(0, 200, 1, 0),
 		Parent = topBar,
@@ -100,7 +113,7 @@ function MainUI.Init(player: Player, RemoteController)
 
 	local titleLabel = UIFactory.Label({
 		Text = "No Title Equipped",
-		Font = Theme.FontRegular,
+		Font = Theme.FontMedium,
 		TextSize = 16,
 		TextColor3 = Theme.SubText,
 		Size = UDim2.new(0, 320, 1, 0),
@@ -109,19 +122,17 @@ function MainUI.Init(player: Player, RemoteController)
 
 	-- Panel container + bottom nav
 	local panelContainer = UIFactory.Frame({
-		Size = UDim2.new(1, -40, 1, -170),
-		Position = UDim2.new(0, 20, 0, 66),
+		Size = UDim2.new(1, -40, 1, -174),
+		Position = UDim2.new(0, 20, 0, 68),
 		BackgroundTransparency = 1,
 		Parent = screenGui,
 	})
 
-	local navBar = UIFactory.Frame({
+	local navBar = UIFactory.Card({
 		Size = UDim2.new(1, -40, 0, 64),
 		Position = UDim2.new(0, 20, 1, -74),
-		BackgroundColor3 = Theme.Background,
 		Parent = screenGui,
 	})
-	UIFactory.Corner(14).Parent = navBar
 	UIFactory.Padding(8).Parent = navBar
 	local navLayout = Instance.new("UIListLayout")
 	navLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -133,28 +144,27 @@ function MainUI.Init(player: Player, RemoteController)
 	local notification = Notification.Create(screenGui)
 
 	local panels = {}
-	local navButtons = {}
+	local navSetters = {}
 
 	local function showPanel(name: string)
 		for panelName, panelFrame in panels do
 			panelFrame.Visible = (panelName == name)
 		end
-		for navName, button in navButtons do
-			button.BackgroundColor3 = (navName == name) and Theme.Accent or Theme.PanelLight
+		for navName, setActive in navSetters do
+			setActive(navName == name)
 		end
 	end
 
 	local function addNavButton(name: string, icon: string)
-		local button = UIFactory.Button({
-			Text = icon .. " " .. name,
+		local button, setActive = UIFactory.NavButton({
+			Text = icon .. "  " .. name,
 			Size = UDim2.new(0, 140, 1, -8),
-			BackgroundColor3 = Theme.PanelLight,
 			Parent = navBar,
 		})
 		button.MouseButton1Click:Connect(function()
 			showPanel(name)
 		end)
-		navButtons[name] = button
+		navSetters[name] = setActive
 	end
 
 	addNavButton("Roll", "🎲")

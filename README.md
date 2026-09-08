@@ -6,6 +6,15 @@ a rebirth ladder, a permanent collection log, VIP monetization, daily login
 streaks, pity-protected RNG, idle/AFK income, an auto-roller, and daily quests
 stacked on top of permanent achievements.
 
+The whole UI runs on one custom **"Arcane Royalty" theme** (deep violet-black
+backdrops, gilded gold accents, rarity-tinted glowing borders) defined once in
+`UIFactory.lua` — see **Visual theme** below for what that looks like and how
+to reskin it.
+
+Don't want to use Rojo? See **[MANUAL_SETUP.md](MANUAL_SETUP.md)** for exact
+step-by-step instructions to build the same instance hierarchy by hand in
+Roblox Studio.
+
 ## Core loop
 
 1. Spend coins to **Roll** for a random Title (7 rarity tiers, weighted RNG).
@@ -60,6 +69,42 @@ src/
 
 The entire GUI is built at runtime from Lua (no `.rbxmx`/`.rbxm` binary blobs), so
 every pixel of it is readable, diffable, and editable as code.
+
+## Visual theme: "Arcane Royalty"
+
+Every panel is built from the same handful of `UIFactory.lua` components, so
+the whole game reskins from one file. The palette and behavior:
+
+- **Palette** — deep violet-black backdrops (`Background`/`Panel`) with a
+  gilded gold primary accent (`Accent`) and a magenta-violet secondary glow
+  (`Violet`), fitting the "royal title" fantasy theme.
+- **`UIFactory.Card`** — the "hero card" look used for the roll-result reveal,
+  Rebirth, Shop, and the Daily Reward popup: a soft diagonal gradient plus a
+  faint violet hairline border. `UIFactory.UpgradeCardGlow` turns that hairline
+  into a slow, endlessly-pulsing glow for a card that should feel special.
+  QuestPanel's entries and the bottom nav bar use the same Card look, so the
+  whole game reads as one system.
+- **`UIFactory.Button`** — the primary gold-gradient CTA (Roll, Rebirth,
+  Claim, Purchase), brightening and scaling up on hover.
+  `UIFactory.SetButtonState` flips it between Gold / Success (active green,
+  ready to claim) / Owned (inactive green, already purchased) / Disabled
+  (inactive grey) / Danger, so call sites never hand-roll colors.
+- **`UIFactory.NavButton`** — the quieter bottom-nav style; its `setActive`
+  closure handles the dim ↔ glowing-gold transition, also reused for the
+  Auto-Roll toggle in `RollPanel`.
+- **Rarity-reactive glow** — `RollPanel`'s result card border recolors to the
+  rolled rarity every time, pulses for Epic+, and cycles a full rainbow for
+  Secret-tier pulls, backed by an expanding "burst ring" that blooms outward
+  from the card (bigger for Epic+). `IndexPanel` mirrors this: every
+  discovered title keeps a permanent rarity-tinted border, and whichever one
+  is currently equipped gets the same pulsing/rainbow glow treatment.
+- **Fonts** — `FontDisplay` (FredokaOne) for big reveal moments and reward
+  numbers, `Font` (GothamBlack) for headers/buttons, `FontMedium`/`FontRegular`
+  (Gotham) for body text.
+
+To reskin: change the color/font tokens at the top of `UIFactory.lua` and every
+panel updates automatically, since none of them hardcode colors — they all
+pull from `UIFactory.Theme`.
 
 ## Setup
 
