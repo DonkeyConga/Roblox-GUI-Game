@@ -1,0 +1,4 @@
+# Aftman toolchain manifest. Install aftman (https://github.com/LPGhatguy/aftman)
+# then run `aftman install` in this directory to get Rojo.
+[tools]
+rojo = "rojo-rbx/rojo@7.4.1"
