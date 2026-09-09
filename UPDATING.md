@@ -93,3 +93,22 @@ Two real bugs made the game feel broken, both now fixed:
 Existing players' save data is unaffected — nothing about the save-data shape
 changed, only how much a *brand new* player starts with and how reliably the
 client receives it.
+
+## Update 2: full-bleed layout + premium buttons/animation
+
+No new scripts this round — just paste over the contents of these three,
+same locations as before:
+
+- **`ReplicatedStorage > Shared > UIFactory`** — adds automatic drop shadows
+  on every Card, a click ripple + hover shine on every button, a new
+  `TabButton`/`SetTabActive` pair for the nav bar's sliding highlight, a
+  `MakeBreathe` idle-pulse helper, and darker/higher-contrast text with a
+  subtle pop-stroke on every label.
+- **`StarterPlayerScripts > Client > UI > MainUI`** — the top bar and every
+  panel now span the full screen edge-to-edge (only the bottom nav keeps a
+  small floating margin); the nav bar's active tab is now a single pill that
+  slides between buttons instead of each button toggling its own background.
+- **`StarterPlayerScripts > Client > UI > RollPanel`** — the Roll button now
+  has the idle breathing pulse.
+- **`StarterPlayerScripts > Client > UI > Notification`** — nudged down
+  slightly to clear the taller top bar.

@@ -23,8 +23,8 @@ UIFactory.Theme = {
 	Violet = Color3.fromRGB(178, 154, 224), -- soft lavender, Pusheenicorn-flavored secondary
 	Success = Color3.fromRGB(120, 200, 150),
 	Danger = Color3.fromRGB(230, 110, 110),
-	Text = Color3.fromRGB(75, 60, 65),
-	SubText = Color3.fromRGB(150, 130, 135),
+	Text = Color3.fromRGB(60, 45, 50),
+	SubText = Color3.fromRGB(115, 95, 100),
 	TextOnGold = Color3.fromRGB(110, 40, 60), -- text sitting on the pink accent gradient
 	Font = Enum.Font.GothamBlack,
 	FontRegular = Enum.Font.Gotham,
@@ -106,6 +106,107 @@ function UIFactory.RainbowStroke(instance: Instance, thickness: number?): (UIStr
 	return stroke, disconnect
 end
 
+-- A soft offset shadow dropped behind `instance` (which must already have its
+-- final Position/Size/Parent set). Copies `instance`'s corner radius if it
+-- has one, so rounded cards get a matching rounded shadow. Purely additive —
+-- never call this before the instance is fully placed.
+function UIFactory.DropShadow(instance: GuiObject, offset: number?, transparency: number?): Frame
+	local shadow = Instance.new("Frame")
+	shadow.BackgroundColor3 = Color3.new(0, 0, 0)
+	shadow.BackgroundTransparency = transparency or 0.88
+	shadow.BorderSizePixel = 0
+	shadow.AnchorPoint = instance.AnchorPoint
+	shadow.Size = instance.Size
+	shadow.Position = instance.Position + UDim2.new(0, offset or 5, 0, offset or 6)
+	shadow.ZIndex = math.max(instance.ZIndex - 1, 0)
+	shadow.Parent = instance.Parent
+
+	local sourceCorner = instance:FindFirstChildOfClass("UICorner")
+	if sourceCorner then
+		local shadowCorner = Instance.new("UICorner")
+		shadowCorner.CornerRadius = sourceCorner.CornerRadius
+		shadowCorner.Parent = shadow
+	end
+
+	return shadow
+end
+
+-- A Material-style expanding ripple from the click point, clipped to the
+-- button's own rounded rect. Attached to every button so clicks always feel
+-- tactile. `button.ClipsDescendants` must already be true.
+function UIFactory.AttachRipple(button: GuiObject, color: Color3?)
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		local absPos = button.AbsolutePosition
+		local absSize = button.AbsoluteSize
+		if absSize.X <= 0 or absSize.Y <= 0 then
+			return
+		end
+
+		local ripple = Instance.new("Frame")
+		ripple.BackgroundColor3 = color or Color3.new(1, 1, 1)
+		ripple.BackgroundTransparency = 0.55
+		ripple.BorderSizePixel = 0
+		ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+		ripple.Position = UDim2.new(0, input.Position.X - absPos.X, 0, input.Position.Y - absPos.Y)
+		ripple.Size = UDim2.new(0, 0, 0, 0)
+		ripple.ZIndex = button.ZIndex + 2
+		ripple.Parent = button
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(1, 0)
+		corner.Parent = ripple
+
+		local targetSize = math.max(absSize.X, absSize.Y) * 1.8
+		TweenService:Create(
+			ripple,
+			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Size = UDim2.new(0, targetSize, 0, targetSize), BackgroundTransparency = 1 }
+		):Play()
+		task.delay(0.55, function()
+			ripple:Destroy()
+		end)
+	end)
+end
+
+-- An endless, gentle scale "breathing" pulse — used sparingly (the single
+-- most important call-to-action, e.g. the Roll button) to draw the eye
+-- without being distracting. Automatically pauses while hovered/pressed by
+-- reusing the same UIScale the button's hover/press tweens already drive
+-- (starting a new tween on the same property cleanly interrupts this one).
+function UIFactory.MakeBreathe(button: GuiObject)
+	local scale = button:FindFirstChildOfClass("UIScale")
+	if not scale then
+		return
+	end
+
+	local breatheTween: Tween? = nil
+	local function startBreathing()
+		breatheTween = TweenService:Create(
+			scale,
+			TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+			{ Scale = 1.035 }
+		)
+		breatheTween:Play()
+	end
+
+	startBreathing()
+
+	button.MouseEnter:Connect(function()
+		if breatheTween then
+			breatheTween:Cancel()
+		end
+	end)
+	button.MouseLeave:Connect(function()
+		task.delay(0.16, startBreathing)
+	end)
+end
+
 function UIFactory.Frame(props: { [string]: any }?): Frame
 	local frame = Instance.new("Frame")
 	frame.BackgroundColor3 = Theme.Panel
@@ -130,6 +231,7 @@ function UIFactory.Card(props: { [string]: any }?): Frame
 	stroke.Parent = card
 
 	applyProps(card, props)
+	UIFactory.DropShadow(card, 5, 0.88)
 	return card
 end
 
@@ -157,6 +259,11 @@ function UIFactory.Label(props: { [string]: any }?): TextLabel
 	label.TextColor3 = Theme.Text
 	label.TextSize = 16
 	label.TextXAlignment = Enum.TextXAlignment.Left
+	-- A very soft white pop-stroke on every label — barely visible on its own,
+	-- but it keeps text legible wherever it sits directly on the cream
+	-- backdrop instead of a white card.
+	label.TextStrokeColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeTransparency = 0.82
 	applyProps(label, props)
 	return label
 end
@@ -181,6 +288,7 @@ end
 function UIFactory.Button(props: { [string]: any }?): TextButton
 	local button = Instance.new("TextButton")
 	button.AutoButtonColor = false
+	button.ClipsDescendants = true
 	button.BackgroundColor3 = Theme.AccentDark
 	button.Font = Theme.Font
 	button.TextColor3 = Theme.TextOnGold
@@ -203,12 +311,41 @@ function UIFactory.Button(props: { [string]: any }?): TextButton
 	stroke.Transparency = 0.4
 	stroke.Parent = button
 
+	-- A diagonal light streak that sweeps across on hover — the classic
+	-- "premium button" shine. Scale-based X so it works at any button width.
+	local shine = Instance.new("Frame")
+	shine.BackgroundColor3 = Color3.new(1, 1, 1)
+	shine.BorderSizePixel = 0
+	shine.Rotation = 18
+	shine.Size = UDim2.new(0, 26, 1, 50)
+	shine.Position = UDim2.new(-0.3, 0, 0, -20)
+	shine.ZIndex = button.ZIndex + 1
+	shine.Parent = button
+	UIFactory.Gradient(
+		ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+			ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+			ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1)),
+		}),
+		0
+	).Parent = shine
+	local shineGradient = shine:FindFirstChildOfClass("UIGradient") :: UIGradient
+	shineGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.5, 0.55),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+
 	local scale = Instance.new("UIScale")
 	scale.Parent = button
 
 	button.MouseEnter:Connect(function()
 		TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0, Thickness = 2.5 }):Play()
 		TweenService:Create(scale, TweenInfo.new(0.15), { Scale = 1.03 }):Play()
+		shine.Position = UDim2.new(-0.3, 0, 0, -20)
+		TweenService:Create(shine, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(1.3, 0, 0, -20),
+		}):Play()
 	end)
 	button.MouseLeave:Connect(function()
 		TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 0.4, Thickness = 1.5 }):Play()
@@ -221,6 +358,8 @@ function UIFactory.Button(props: { [string]: any }?): TextButton
 		TweenService:Create(scale, TweenInfo.new(0.08), { Scale = 1.03 }):Play()
 	end)
 
+	UIFactory.AttachRipple(button, Color3.new(1, 1, 1))
+
 	applyProps(button, props)
 	return button
 end
@@ -231,6 +370,7 @@ end
 function UIFactory.NavButton(props: { [string]: any }?): (TextButton, (active: boolean) -> ())
 	local button = Instance.new("TextButton")
 	button.AutoButtonColor = false
+	button.ClipsDescendants = true
 	button.BackgroundColor3 = Theme.Panel
 	button.Font = Theme.Font
 	button.TextColor3 = Theme.SubText
@@ -276,8 +416,45 @@ function UIFactory.NavButton(props: { [string]: any }?): (TextButton, (active: b
 		}):Play()
 	end
 
+	UIFactory.AttachRipple(button, Theme.Violet)
+
 	applyProps(button, props)
 	return button, setActive
+end
+
+-- A minimal, transparent-background button meant to sit directly on top of
+-- an external moving highlight (see MainUI's sliding nav pill) — just text,
+-- ripple, and a press-scale, no background of its own. Use SetTabActive to
+-- flip its text color when the external highlight lands on it.
+function UIFactory.TabButton(props: { [string]: any }?): TextButton
+	local button = Instance.new("TextButton")
+	button.AutoButtonColor = false
+	button.ClipsDescendants = true
+	button.BackgroundTransparency = 1
+	button.Font = Theme.Font
+	button.TextColor3 = Theme.SubText
+	button.TextSize = 15
+	button.BorderSizePixel = 0
+
+	local scale = Instance.new("UIScale")
+	scale.Parent = button
+	button.MouseButton1Down:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), { Scale = 0.94 }):Play()
+	end)
+	button.MouseButton1Up:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), { Scale = 1 }):Play()
+	end)
+
+	UIFactory.AttachRipple(button, Theme.Violet)
+
+	applyProps(button, props)
+	return button
+end
+
+function UIFactory.SetTabActive(button: TextButton, active: boolean)
+	TweenService:Create(button, TweenInfo.new(0.15), {
+		TextColor3 = active and Theme.TextOnGold or Theme.SubText,
+	}):Play()
 end
 
 -- Flips a primary Button between its default gold look and a flat state

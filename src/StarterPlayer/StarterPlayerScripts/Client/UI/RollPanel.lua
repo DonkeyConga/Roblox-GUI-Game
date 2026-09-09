@@ -95,6 +95,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		Position = UDim2.new(0.5, -140, 0, 230),
 		Parent = frame,
 	})
+	UIFactory.MakeBreathe(rollButton)
 
 	local equippedLabel = UIFactory.Label({
 		Text = "Equipped: None",

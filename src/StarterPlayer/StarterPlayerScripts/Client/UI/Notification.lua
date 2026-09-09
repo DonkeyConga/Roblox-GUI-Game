@@ -10,8 +10,8 @@ local Theme = UIFactory.Theme
 
 function Notification.Create(screenGui: ScreenGui)
 	local container = UIFactory.Frame({
-		Size = UDim2.new(0, 320, 1, -80),
-		Position = UDim2.new(1, -336, 0, 70),
+		Size = UDim2.new(0, 320, 1, -100),
+		Position = UDim2.new(1, -336, 0, 88),
 		BackgroundTransparency = 1,
 		ZIndex = 60,
 		Parent = screenGui,

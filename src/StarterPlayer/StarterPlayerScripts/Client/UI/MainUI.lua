@@ -1,8 +1,11 @@
 --!strict
--- Builds the whole ScreenGui: ambient backdrop, top bar, bottom nav, and the
--- five panels. Owns the single `state` table that every panel reads from and
--- that DataSync (or the RequestSync pull below) keeps up to date in place.
+-- Builds the whole ScreenGui: ambient backdrop, an edge-to-edge top bar, a
+-- floating bottom nav with a sliding highlight pill, and the five panels
+-- filling the entire space between them. Owns the single `state` table that
+-- every panel reads from and that DataSync (or the RequestSync pull below)
+-- keeps up to date in place.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
 local Effects = require(ReplicatedStorage.Shared.Effects)
@@ -19,6 +22,10 @@ local Notification = require(script.Parent.Notification)
 
 local MainUI = {}
 local Theme = UIFactory.Theme
+
+local TOP_BAR_HEIGHT = 72
+local NAV_HEIGHT = 68
+local NAV_MARGIN = 16 -- the nav bar floats a small distance off the very bottom/sides
 
 local titleById = {}
 for _, title in Titles do
@@ -72,27 +79,42 @@ function MainUI.Init(player: Player, RemoteController)
 		CanAutoRoll = false,
 	}
 
-	-- Top bar: gradient banner with a gilded divider line along the bottom edge
-	-- and a gently-bobbing paw icon just for cuteness.
+	-- Top bar: full-width, edge-to-edge, with a soft elevation shadow cast
+	-- into the content below and a gently-bobbing paw icon for cuteness.
 	local topBar = UIFactory.Frame({
-		Size = UDim2.new(1, 0, 0, 58),
+		Size = UDim2.new(1, 0, 0, TOP_BAR_HEIGHT),
+		Position = UDim2.new(0, 0, 0, 0),
 		BackgroundColor3 = Theme.Panel,
 		Parent = screenGui,
 	})
 	UIFactory.Gradient(ColorSequence.new(Theme.PanelTop, Theme.Panel), 90).Parent = topBar
-	UIFactory.Padding(12).Parent = topBar
+	UIFactory.Padding(16).Parent = topBar
 
 	UIFactory.Frame({
-		Size = UDim2.new(1, 0, 0, 2),
-		Position = UDim2.new(0, 0, 1, -2),
+		Size = UDim2.new(1, 0, 0, 3),
+		Position = UDim2.new(0, 0, 1, -3),
 		BackgroundColor3 = Theme.Accent,
 		Parent = topBar,
+	})
+
+	local topBarShadow = UIFactory.Frame({
+		Size = UDim2.new(1, 0, 0, 16),
+		Position = UDim2.new(0, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.78,
+		Parent = topBar,
+	})
+	UIFactory.Gradient(ColorSequence.new(Color3.new(0, 0, 0), Color3.new(0, 0, 0)), 90).Parent = topBarShadow
+	local topBarShadowGradient = topBarShadow:FindFirstChildOfClass("UIGradient") :: UIGradient
+	topBarShadowGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
 	})
 
 	local topLayout = Instance.new("UIListLayout")
 	topLayout.FillDirection = Enum.FillDirection.Horizontal
 	topLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	topLayout.Padding = UDim.new(0, 20)
+	topLayout.Padding = UDim.new(0, 24)
 	topLayout.Parent = topBar
 
 	-- Bobbing the label's own Position wouldn't work here — it's a direct
@@ -100,13 +122,13 @@ function MainUI.Init(player: Player, RemoteController)
 	-- frame and would fight the tween. An unmanaged wrapper frame isolates
 	-- the animated child from that layout entirely.
 	local pawWrapper = UIFactory.Frame({
-		Size = UDim2.new(0, 28, 0, 28),
+		Size = UDim2.new(0, 32, 0, 32),
 		BackgroundTransparency = 1,
 		Parent = topBar,
 	})
 	local pawIcon = UIFactory.Label({
 		Text = "🐾",
-		TextSize = 22,
+		TextSize = 26,
 		Size = UDim2.new(1, 0, 1, 0),
 		Parent = pawWrapper,
 	})
@@ -116,8 +138,8 @@ function MainUI.Init(player: Player, RemoteController)
 		Text = "🪙 0",
 		Font = Theme.FontDisplay,
 		TextColor3 = Theme.Accent,
-		TextSize = 22,
-		Size = UDim2.new(0, 160, 1, 0),
+		TextSize = 26,
+		Size = UDim2.new(0, 170, 1, 0),
 		Parent = topBar,
 	})
 
@@ -125,47 +147,102 @@ function MainUI.Init(player: Player, RemoteController)
 		Text = "✦ Rebirths: 0",
 		Font = Theme.FontDisplay,
 		TextColor3 = Theme.Violet,
-		TextSize = 20,
-		Size = UDim2.new(0, 200, 1, 0),
+		TextSize = 22,
+		Size = UDim2.new(0, 210, 1, 0),
 		Parent = topBar,
 	})
 
 	local titleLabel = UIFactory.Label({
 		Text = "No Title Equipped",
 		Font = Theme.FontMedium,
-		TextSize = 16,
+		TextSize = 18,
 		TextColor3 = Theme.SubText,
-		Size = UDim2.new(0, 320, 1, 0),
+		Size = UDim2.new(0, 360, 1, 0),
 		Parent = topBar,
 	})
 
-	-- Panel container + bottom nav
+	-- Panel container fills the entire space between the top bar and the
+	-- floating nav — full width, no side margins, so every panel gets the
+	-- whole screen to work with.
 	local panelContainer = UIFactory.Frame({
-		Size = UDim2.new(1, -40, 1, -174),
-		Position = UDim2.new(0, 20, 0, 68),
+		Size = UDim2.new(1, 0, 1, -(TOP_BAR_HEIGHT + NAV_HEIGHT + NAV_MARGIN)),
+		Position = UDim2.new(0, 0, 0, TOP_BAR_HEIGHT),
 		BackgroundTransparency = 1,
 		Parent = screenGui,
 	})
 
+	-- Floating bottom nav: a small margin on all sides so its rounded card
+	-- reads as a deliberate floating pill rather than a bar clipped by the
+	-- screen edge.
 	local navBar = UIFactory.Card({
-		Size = UDim2.new(1, -40, 0, 64),
-		Position = UDim2.new(0, 20, 1, -74),
+		Size = UDim2.new(1, -NAV_MARGIN * 2, 0, NAV_HEIGHT),
+		Position = UDim2.new(0, NAV_MARGIN, 1, -(NAV_HEIGHT + NAV_MARGIN)),
 		Parent = screenGui,
 	})
 	UIFactory.Padding(8).Parent = navBar
+
+	-- The sliding highlight pill lives directly in navBar (NOT inside the
+	-- button row below), so the row's UIListLayout never tries to arrange it
+	-- as another button. Its ZIndex keeps it behind the button row.
+	local navPill = Instance.new("Frame")
+	navPill.BackgroundColor3 = Theme.AccentDark
+	navPill.BorderSizePixel = 0
+	navPill.ZIndex = 1
+	navPill.Parent = navBar
+	UIFactory.Corner(10).Parent = navPill
+	UIFactory.Gradient(
+		ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Theme.AccentPale),
+			ColorSequenceKeypoint.new(0.55, Theme.Accent),
+			ColorSequenceKeypoint.new(1, Theme.AccentDark),
+		}),
+		90
+	).Parent = navPill
+
+	local navButtonRow = UIFactory.Frame({
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		ZIndex = 2,
+		Parent = navBar,
+	})
 	local navLayout = Instance.new("UIListLayout")
 	navLayout.FillDirection = Enum.FillDirection.Horizontal
 	navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	navLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	navLayout.Padding = UDim.new(0, 10)
-	navLayout.Parent = navBar
+	navLayout.Parent = navButtonRow
 
 	local notification = Notification.Create(screenGui)
 
 	local panels = {}
-	local navSetters = {}
+	local tabSetters = {}
+	local tabButtons: { [string]: TextButton } = {}
 
-	local function showPanel(name: string)
+	local function movePillTo(name: string, animate: boolean)
+		local button = tabButtons[name]
+		if not button then
+			return
+		end
+		local targetPosition = UDim2.new(
+			0,
+			button.AbsolutePosition.X - navBar.AbsolutePosition.X,
+			0,
+			button.AbsolutePosition.Y - navBar.AbsolutePosition.Y
+		)
+		local targetSize = UDim2.new(0, button.AbsoluteSize.X, 0, button.AbsoluteSize.Y)
+		if animate then
+			TweenService:Create(
+				navPill,
+				TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ Position = targetPosition, Size = targetSize }
+			):Play()
+		else
+			navPill.Position = targetPosition
+			navPill.Size = targetSize
+		end
+	end
+
+	local function showPanel(name: string, animatePill: boolean?)
 		for panelName, panelFrame in panels do
 			panelFrame.Visible = (panelName == name)
 		end
@@ -173,28 +250,32 @@ function MainUI.Init(player: Player, RemoteController)
 		if shownFrame then
 			Effects.PopIn(shownFrame)
 		end
-		for navName, setActive in navSetters do
-			setActive(navName == name)
+		for tabName, setActive in tabSetters do
+			setActive(tabName == name)
 		end
+		movePillTo(name, animatePill ~= false)
 	end
 
-	local function addNavButton(name: string, icon: string)
-		local button, setActive = UIFactory.NavButton({
+	local function addTabButton(name: string, icon: string)
+		local button = UIFactory.TabButton({
 			Text = icon .. "  " .. name,
 			Size = UDim2.new(0, 140, 1, -8),
-			Parent = navBar,
+			Parent = navButtonRow,
 		})
 		button.MouseButton1Click:Connect(function()
 			showPanel(name)
 		end)
-		navSetters[name] = setActive
+		tabSetters[name] = function(active: boolean)
+			UIFactory.SetTabActive(button, active)
+		end
+		tabButtons[name] = button
 	end
 
-	addNavButton("Roll", "🎲")
-	addNavButton("Index", "🐱")
-	addNavButton("Rebirth", "✦")
-	addNavButton("Shop", "🛍️")
-	addNavButton("Quests", "📜")
+	addTabButton("Roll", "🎲")
+	addTabButton("Index", "🐱")
+	addTabButton("Rebirth", "✦")
+	addTabButton("Shop", "🛍️")
+	addTabButton("Quests", "📜")
 
 	panels["Roll"] = RollPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Index"] = IndexPanel.Create(panelContainer, state, RemoteController, notification)
@@ -202,7 +283,14 @@ function MainUI.Init(player: Player, RemoteController)
 	panels["Shop"] = ShopPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Quests"] = QuestPanel.Create(panelContainer, state, RemoteController, notification)
 
-	showPanel("Roll")
+	showPanel("Roll", false)
+	-- AbsolutePosition/AbsoluteSize on brand-new UIListLayout children aren't
+	-- reliable until at least one layout pass has happened; defer one extra
+	-- snap so the pill lands in the right place on first load instead of
+	-- wherever it guessed before the row was actually laid out.
+	task.defer(function()
+		movePillTo("Roll", false)
+	end)
 
 	local dailyRewardPopup = DailyRewardPopup.Create(screenGui, RemoteController, notification)
 

@@ -80,25 +80,38 @@ every pixel of it is readable, diffable, and editable as code.
 ## Visual theme: Pusheen
 
 Every panel is built from the same handful of `UIFactory.lua` components, so
-the whole game reskins from one file. The palette and behavior:
+the whole game reskins from one file. The UI is full-bleed — the top bar and
+every panel span edge-to-edge with no side margins, so the whole screen is
+put to work; only the bottom nav keeps a small margin, floating as a
+deliberate rounded pill rather than a bar clipped by the screen edge.
 
 - **Palette** — warm cream/white backdrops (`Background`/`Panel`) with a
   blush-pink primary accent (`Accent`) and a soft lavender secondary glow
   (`Violet`, Pusheenicorn-flavored), plus pastel rarity colors on `Rarities.lua`.
+  Text defaults to a dark, high-contrast color with a faint white pop-stroke
+  on every label so it stays legible over any background.
 - **`UIFactory.Card`** — the "hero card" look used for the roll-result reveal,
   Rebirth, Shop, quest entries, the Daily Reward popup, and the bottom nav
-  bar: a soft diagonal gradient plus a faint lavender hairline border.
+  bar: a soft diagonal gradient, a faint lavender hairline border, and a
+  soft drop shadow automatically dropped behind it for real depth.
   `UIFactory.UpgradeCardGlow` turns that hairline into a slow, endlessly-pulsing
   glow for a card that should feel special.
 - **`UIFactory.Button`** — the primary blush-pink CTA (Roll, Rebirth, Claim,
-  Purchase), brightening and scaling up on hover. `UIFactory.SetButtonState`
-  flips it between Gold (default) / Success (active green, ready to claim) /
-  Owned (inactive green, already purchased) / Disabled (inactive grey) /
-  Danger, so call sites never hand-roll colors or accidentally make a
-  "ready to claim" button unclickable.
-- **`UIFactory.NavButton`** — the quieter bottom-nav style; its `setActive`
-  closure handles the dim ↔ glowing-pink transition, also reused for the
-  Auto-Roll toggle in `RollPanel`.
+  Purchase): brightens and scales up on hover, sweeps a diagonal light shine
+  across itself, and spawns a Material-style expanding ripple from the exact
+  click point. `UIFactory.SetButtonState` flips it between Gold (default) /
+  Success (active green, ready to claim) / Owned (inactive green, already
+  purchased) / Disabled (inactive grey) / Danger, so call sites never
+  hand-roll colors or accidentally make a "ready to claim" button unclickable.
+  `UIFactory.MakeBreathe` adds an endless, gentle scale pulse to the single
+  most important CTA (the Roll button) that pauses on hover — used sparingly
+  on purpose, so motion still means something.
+- **`UIFactory.TabButton` + a sliding pill** — the bottom nav is a single
+  moving highlight (`navPill`) that glides to whichever tab is active, rather
+  than each button independently flipping its own background; tab buttons
+  themselves are transparent and just carry text + ripple.
+  `UIFactory.NavButton` (a separate, self-contained on/off style) is reused
+  for the Auto-Roll toggle in `RollPanel`, which isn't part of that shared pill.
 - **Rarity-reactive glow** — `RollPanel`'s result card border recolors to the
   rolled rarity every time, pulses for Epic+, and cycles a full rainbow for
   Secret-tier pulls, backed by an expanding "burst ring" and a little paw/heart
