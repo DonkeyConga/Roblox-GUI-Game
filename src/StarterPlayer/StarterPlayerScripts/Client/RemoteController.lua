@@ -1,6 +1,9 @@
 --!strict
 -- Thin client-side wrapper around the shared Remotes so UI code never touches
--- RemoteEvent/RemoteFunction instances directly.
+-- RemoteEvent/RemoteFunction instances directly. Every InvokeServer call is
+-- pcall-guarded so a dropped connection or a server-side hiccup comes back as
+-- an ordinary { Success = false, Reason = "NetworkError" } instead of an
+-- uncaught error that silently kills whatever click handler called it.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = require(ReplicatedStorage.Shared.RemoteEvents)
 
@@ -18,38 +21,64 @@ local autoRollFunction = Remotes.GetFunction("ToggleAutoRoll")
 local claimStreakFunction = Remotes.GetFunction("ClaimDailyStreak")
 local claimQuestFunction = Remotes.GetFunction("ClaimQuest")
 local buyVIPFunction = Remotes.GetFunction("BuyVIP")
+local requestSyncFunction = Remotes.GetFunction("RequestSync")
 
 RemoteController.OnDataSync = dataSyncEvent.OnClientEvent
 RemoteController.OnRollResult = rollResultEvent.OnClientEvent
 RemoteController.OnNotify = notifyEvent.OnClientEvent
 RemoteController.OnShowDailyReward = showDailyRewardEvent.OnClientEvent
 
+local function safeInvoke(remoteFunction: RemoteFunction, ...): any
+	local success, result = pcall(function(...)
+		return remoteFunction:InvokeServer(...)
+	end, ...)
+	if not success then
+		warn(`[RemoteController] {remoteFunction.Name} failed: {result}`)
+		return { Success = false, Reason = "NetworkError" }
+	end
+	return result
+end
+
 function RemoteController.RollTitle()
-	return rollFunction:InvokeServer()
+	return safeInvoke(rollFunction)
 end
 
 function RemoteController.Rebirth()
-	return rebirthFunction:InvokeServer()
+	return safeInvoke(rebirthFunction)
 end
 
 function RemoteController.EquipTitle(titleId: string?)
-	return equipFunction:InvokeServer(titleId)
+	return safeInvoke(equipFunction, titleId)
 end
 
 function RemoteController.ToggleAutoRoll(enabled: boolean)
-	return autoRollFunction:InvokeServer(enabled)
+	return safeInvoke(autoRollFunction, enabled)
 end
 
 function RemoteController.ClaimDailyStreak()
-	return claimStreakFunction:InvokeServer()
+	return safeInvoke(claimStreakFunction)
 end
 
 function RemoteController.ClaimQuest(questId: string)
-	return claimQuestFunction:InvokeServer(questId)
+	return safeInvoke(claimQuestFunction, questId)
 end
 
 function RemoteController.BuyVIP()
-	return buyVIPFunction:InvokeServer()
+	return safeInvoke(buyVIPFunction)
+end
+
+-- Pulls the player's current data directly, instead of only waiting on the
+-- server's join-time push — see the comment atop Init.server.lua for why.
+-- Returns nil if the server hasn't finished loading this player's save yet.
+function RemoteController.RequestSync()
+	local success, result = pcall(function()
+		return requestSyncFunction:InvokeServer()
+	end)
+	if not success then
+		warn(`[RemoteController] RequestSync failed: {result}`)
+		return nil
+	end
+	return result
 end
 
 return RemoteController

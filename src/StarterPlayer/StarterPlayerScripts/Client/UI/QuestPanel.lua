@@ -73,7 +73,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 	listLayout.Parent = scroll
 
 	UIFactory.Title({
-		Text = "📜 Daily Quests",
+		Text = "📜 Daily Pusheen Quests",
 		TextSize = 20,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		LayoutOrder = 0,
@@ -101,7 +101,15 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 				entryData.ClaimButton.MouseButton1Click:Connect(function()
 					local result = RemoteController.ClaimQuest(questInfo.Id)
 					if result.Success then
-						notification.Show(`Claimed {result.Reward} coins!`, "Success")
+						notification.Show(`🐾 Claimed {result.Reward} coins!`, "Success")
+					elseif result.Reason == "NotComplete" then
+						notification.Show("Not finished yet — keep going!", "Danger")
+					elseif result.Reason == "AlreadyClaimed" then
+						notification.Show("Already claimed today.", "Danger")
+					elseif result.Reason == "NetworkError" then
+						notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
+					else
+						notification.Show("Couldn't claim that quest right now.", "Danger")
 					end
 				end)
 				questEntries[questInfo.Id] = entryData

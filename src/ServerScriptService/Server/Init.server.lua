@@ -2,6 +2,12 @@
 -- Boots every server service and wires the Remotes to them. This is the only
 -- script that should ever touch RemoteFunction.OnServerInvoke / FireClient
 -- directly — everything else lives behind a service module's plain functions.
+--
+-- IMPORTANT: the join-time DataSync push below is a fire-and-forget
+-- RemoteEvent — if the client's listener isn't connected yet when it fires,
+-- that payload is lost for good (Roblox does not queue/replay RemoteEvents).
+-- RequestSync exists so the client can pull its own data once it's actually
+-- ready to receive it, instead of only hoping this push wins the race.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -33,13 +39,14 @@ local autoRollFunction = Remotes.GetFunction("ToggleAutoRoll")
 local claimStreakFunction = Remotes.GetFunction("ClaimDailyStreak")
 local claimQuestFunction = Remotes.GetFunction("ClaimQuest")
 local buyVIPFunction = Remotes.GetFunction("BuyVIP")
+local requestSyncFunction = Remotes.GetFunction("RequestSync")
 
-local function pushDataSync(player: Player)
+local function buildSyncPayload(player: Player)
 	local data = DataService.Get(player)
 	if not data then
-		return
+		return nil
 	end
-	dataSyncEvent:FireClient(player, {
+	return {
 		Coins = data.Coins,
 		Rebirths = data.Rebirths,
 		EquippedTitle = data.EquippedTitle,
@@ -55,10 +62,20 @@ local function pushDataSync(player: Player)
 		RollCost = RollService.GetRollCost(data),
 		RebirthRequirement = RebirthService.GetRequirement(data),
 		CanAutoRoll = AutoRollService.CanUseAutoRoll(data),
-	})
+	}
 end
 
-GamepassService.Init(pushDataSync)
+local function pushDataSync(player: Player)
+	local payload = buildSyncPayload(player)
+	if payload then
+		dataSyncEvent:FireClient(player, payload)
+	end
+end
+
+GamepassService.Init(function(player: Player)
+	AchievementService.Check(player)
+	pushDataSync(player)
+end)
 
 Players.PlayerAdded:Connect(function(player: Player)
 	local data = DataService.Load(player)
@@ -99,6 +116,14 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	DataService.Release(player)
 end)
 
+-- The client calls this once its own DataSync listener is wired up, so it
+-- always ends up with correct data regardless of how the join-time push race
+-- resolved. Returns nil if this player's save hasn't finished loading yet —
+-- in that case the client just waits for the DataSync push that follows Load.
+requestSyncFunction.OnServerInvoke = function(player: Player)
+	return buildSyncPayload(player)
+end
+
 rollFunction.OnServerInvoke = function(player: Player)
 	local result = RollService.PerformRoll(player)
 	if result.Success then
@@ -133,6 +158,7 @@ end
 claimStreakFunction.OnServerInvoke = function(player: Player)
 	local result = StreakService.Claim(player)
 	if result.Success then
+		AchievementService.Check(player)
 		pushDataSync(player)
 	end
 	return result

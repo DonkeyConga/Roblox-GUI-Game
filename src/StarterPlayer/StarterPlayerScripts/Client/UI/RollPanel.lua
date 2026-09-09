@@ -1,13 +1,15 @@
 --!strict
 -- The main screen: big Roll button, pity progress, result reveal, Auto-Roll toggle.
 -- The reveal card's border color/glow reacts to the rolled rarity, topped off
--- with an expanding "burst ring" and — for the rarest pulls — a cycling
--- rainbow border, so the moment of the roll is the visual high point of the UI.
+-- with an expanding "burst ring", a little paw/heart confetti pop for Epic+,
+-- and — for the rarest pulls — a cycling rainbow border, so the moment of the
+-- roll is the visual high point of the UI.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
+local Effects = require(ReplicatedStorage.Shared.Effects)
 local Titles = require(ReplicatedStorage.Shared.Titles)
 local Config = require(ReplicatedStorage.Shared.Config)
 
@@ -15,6 +17,8 @@ local RollPanel = {}
 local Theme = UIFactory.Theme
 
 local EPIC_MIN_INDEX = Config.PityMinRarityIndex
+local CONFETTI_GLYPHS = { "🐾", "💕", "⭐", "✨" }
+local RESULT_CENTER = UDim2.new(0.5, 0, 0, 90)
 
 local titleById = {}
 for _, title in Titles do
@@ -38,8 +42,8 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	resultStroke.Thickness = 2
 
 	local resultTitle = UIFactory.Title({
-		Text = "Roll to reveal your title!",
-		TextSize = 26,
+		Text = "🐱 Roll to reveal your Pusheen!",
+		TextSize = 24,
 		Size = UDim2.new(1, -20, 0, 50),
 		Position = UDim2.new(0, 10, 0, 20),
 		Parent = resultCard,
@@ -85,8 +89,8 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	local _, setPityFraction = UIFactory.ProgressBar(pityBarContainer, 0)
 
 	local rollButton = UIFactory.Button({
-		Text = `ROLL — {Config.BaseRollCost} 🪙`,
-		TextSize = 28,
+		Text = `🎲 ROLL — {Config.BaseRollCost} 🪙`,
+		TextSize = 26,
 		Size = UDim2.new(0, 280, 0, 70),
 		Position = UDim2.new(0.5, -140, 0, 230),
 		Parent = frame,
@@ -109,7 +113,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	})
 
 	local _hint = UIFactory.Label({
-		Text = "Tip: equip a title from the Index tab to boost your coin gain.",
+		Text = "🐾 Tip: equip a title from the Index tab to boost your coin gain.",
 		TextColor3 = Theme.SubText,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -130,33 +134,6 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 			rainbowConn:Disconnect()
 			rainbowConn = nil
 		end
-	end
-
-	-- A ring that blooms outward from the card and fades — bigger for rarer pulls.
-	local function spawnBurstRing(color: Color3, big: boolean)
-		local ring = Instance.new("Frame")
-		ring.AnchorPoint = Vector2.new(0.5, 0.5)
-		ring.Position = UDim2.new(0.5, 0, 0, 90)
-		ring.Size = UDim2.new(0, 40, 0, 40)
-		ring.BackgroundColor3 = color
-		ring.BackgroundTransparency = 0.15
-		ring.BorderSizePixel = 0
-		ring.ZIndex = resultCard.ZIndex - 1
-		ring.Parent = frame
-
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0.5, 0)
-		corner.Parent = ring
-
-		local targetSize = big and 620 or 400
-		TweenService:Create(
-			ring,
-			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ Size = UDim2.new(0, targetSize, 0, targetSize), BackgroundTransparency = 1 }
-		):Play()
-		task.delay(0.65, function()
-			ring:Destroy()
-		end)
 	end
 
 	function RollPanel.PlayRollResult(result)
@@ -189,9 +166,10 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 			end
 		end
 
-		spawnBurstRing(rarity.Color, isEpicPlus)
+		Effects.SpawnBurstRing(frame, RESULT_CENTER, rarity.Color, isEpicPlus)
 		if isEpicPlus then
-			spawnBurstRing(rarity.Color, false)
+			Effects.SpawnBurstRing(frame, RESULT_CENTER, rarity.Color, false)
+			Effects.SpawnConfetti(frame, RESULT_CENTER, CONFETTI_GLYPHS, rarity.Name == "Secret" and 16 or 10)
 		end
 
 		if result.SetBonusGranted then
@@ -203,7 +181,11 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 		local result = RemoteController.RollTitle()
 		if not result.Success then
 			if result.Reason == "NotEnoughCoins" then
-				notification.Show(`You need {result.Cost} coins to roll.`, "Danger")
+				notification.Show(`You need {result.Cost} coins to roll — {Config.BaseIdleCoinsPerSecond}/sec is coming in passively!`, "Danger")
+			elseif result.Reason == "NetworkError" then
+				notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
+			else
+				notification.Show("Couldn't roll right now — try again.", "Danger")
 			end
 			return
 		end
@@ -222,7 +204,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	end)
 
 	function RollPanel.Refresh(newState)
-		rollButton.Text = `ROLL — {newState.RollCost} 🪙`
+		rollButton.Text = `🎲 ROLL — {newState.RollCost} 🪙`
 		pityLabel.Text = `Pity: {newState.RollsSincePity} / {Config.PityRollThreshold}`
 		setPityFraction(newState.RollsSincePity / Config.PityRollThreshold)
 		autoRollToggle.Text = newState.AutoRollEnabled and "Auto-Roll: ON" or "Enable Auto-Roll"

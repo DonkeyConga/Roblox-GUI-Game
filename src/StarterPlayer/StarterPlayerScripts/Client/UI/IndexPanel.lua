@@ -24,14 +24,14 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 	})
 
 	local header = UIFactory.Title({
-		Text = "Title Index — 0%",
+		Text = "🐱 Pusheen Index — 0%",
 		TextSize = 24,
 		Size = UDim2.new(1, 0, 0, 34),
 		Parent = frame,
 	})
 
 	UIFactory.Label({
-		Text = "Tap a discovered title to equip it. Tap again to unequip.",
+		Text = "🐾 Tap a discovered variant to equip it. Tap again to unequip.",
 		TextColor3 = Theme.SubText,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -127,8 +127,12 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 					end
 					local isEquipped = state.EquippedTitle == title.Id
 					local result = RemoteController.EquipTitle(if isEquipped then nil else title.Id)
-					if result.Success and not isEquipped then
-						notification.Show(`Equipped {title.Name}`, "Success")
+					if result.Success then
+						if not isEquipped then
+							notification.Show(`🐾 Equipped {title.Name}`, "Success")
+						end
+					else
+						notification.Show("Couldn't equip that title right now.", "Danger")
 					end
 				end)
 
@@ -217,7 +221,7 @@ function IndexPanel.Create(parent: Instance, state, RemoteController, notificati
 		end
 
 		local percent = total > 0 and math.floor((discovered / total) * 100) or 0
-		header.Text = `Title Index — {percent}% ({discovered}/{total})`
+		header.Text = `🐱 Pusheen Index — {percent}% ({discovered}/{total})`
 	end
 
 	return frame

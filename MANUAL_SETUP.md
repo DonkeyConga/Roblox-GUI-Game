@@ -37,6 +37,7 @@ below goes inside that one folder, all as siblings (no further nesting):
 | `Achievements` | ModuleScript | `src/ReplicatedStorage/Shared/Achievements.lua` |
 | `RemoteEvents` | ModuleScript | `src/ReplicatedStorage/Shared/RemoteEvents.lua` |
 | `UIFactory` | ModuleScript | `src/ReplicatedStorage/Shared/UIFactory.lua` |
+| `Effects` | ModuleScript | `src/ReplicatedStorage/Shared/Effects.lua` |
 
 You do **not** need to manually create any `RemoteEvent`/`RemoteFunction`
 instances or a `Remotes` folder — `RemoteEvents.lua`'s `Setup()` function
@@ -51,7 +52,8 @@ ReplicatedStorage
     ├── Quests (ModuleScript)
     ├── Achievements (ModuleScript)
     ├── RemoteEvents (ModuleScript)
-    └── UIFactory (ModuleScript)
+    ├── UIFactory (ModuleScript)
+    └── Effects (ModuleScript)
 ```
 
 ---

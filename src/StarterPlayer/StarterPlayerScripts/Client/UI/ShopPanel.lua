@@ -45,7 +45,7 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 	layout.Parent = card
 
 	UIFactory.Title({
-		Text = "⭐ VIP",
+		Text = "⭐ VIP Pusheen",
 		TextSize = 26,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.new(1, 0, 0, 34),
@@ -57,7 +57,7 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 		`{Config.VIPCoinMultiplier}x Coins earned`,
 		`{Config.VIPLuckMultiplier}x Luck on every roll`,
 		"Unlocks Auto-Roll immediately",
-		"Exclusive VIP title",
+		"Exclusive VIP Pusheen title",
 	}
 	for i, perk in perks do
 		UIFactory.Label({
@@ -83,7 +83,11 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 		end
 		local result = RemoteController.BuyVIP()
 		if not result.Success then
-			notification.Show("VIP isn't configured yet — check back soon!", "Danger")
+			if result.Reason == "NetworkError" then
+				notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
+			else
+				notification.Show("VIP isn't configured yet — check back soon!", "Danger")
+			end
 		end
 	end)
 

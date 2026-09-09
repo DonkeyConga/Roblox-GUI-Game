@@ -2,7 +2,7 @@
 -- Central tuning knobs for the whole game. Change numbers here to rebalance.
 local Config = {}
 
-Config.StartingCoins = 0
+Config.StartingCoins = 150 -- enough for 3 rolls right away — never make a new player stare at a button they can't afford to press
 
 Config.BaseRollCost = 50
 Config.RollCostGrowthPerRebirth = 1.35 -- roll cost multiplies by this every rebirth

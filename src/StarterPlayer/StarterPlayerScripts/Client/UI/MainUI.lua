@@ -1,10 +1,11 @@
 --!strict
 -- Builds the whole ScreenGui: ambient backdrop, top bar, bottom nav, and the
 -- five panels. Owns the single `state` table that every panel reads from and
--- that DataSync keeps up to date in place.
+-- that DataSync (or the RequestSync pull below) keeps up to date in place.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
+local Effects = require(ReplicatedStorage.Shared.Effects)
 local Titles = require(ReplicatedStorage.Shared.Titles)
 local Rarities = require(ReplicatedStorage.Shared.Rarities)
 
@@ -71,7 +72,8 @@ function MainUI.Init(player: Player, RemoteController)
 		CanAutoRoll = false,
 	}
 
-	-- Top bar: gradient banner with a gilded divider line along the bottom edge.
+	-- Top bar: gradient banner with a gilded divider line along the bottom edge
+	-- and a gently-bobbing paw icon just for cuteness.
 	local topBar = UIFactory.Frame({
 		Size = UDim2.new(1, 0, 0, 58),
 		BackgroundColor3 = Theme.Panel,
@@ -92,6 +94,23 @@ function MainUI.Init(player: Player, RemoteController)
 	topLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	topLayout.Padding = UDim.new(0, 20)
 	topLayout.Parent = topBar
+
+	-- Bobbing the label's own Position wouldn't work here — it's a direct
+	-- child of topBar's UIListLayout, which recalculates Position every
+	-- frame and would fight the tween. An unmanaged wrapper frame isolates
+	-- the animated child from that layout entirely.
+	local pawWrapper = UIFactory.Frame({
+		Size = UDim2.new(0, 28, 0, 28),
+		BackgroundTransparency = 1,
+		Parent = topBar,
+	})
+	local pawIcon = UIFactory.Label({
+		Text = "🐾",
+		TextSize = 22,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = pawWrapper,
+	})
+	Effects.Bob(pawIcon, 3, 1.4)
 
 	local coinsLabel = UIFactory.Label({
 		Text = "🪙 0",
@@ -150,6 +169,10 @@ function MainUI.Init(player: Player, RemoteController)
 		for panelName, panelFrame in panels do
 			panelFrame.Visible = (panelName == name)
 		end
+		local shownFrame = panels[name]
+		if shownFrame then
+			Effects.PopIn(shownFrame)
+		end
 		for navName, setActive in navSetters do
 			setActive(navName == name)
 		end
@@ -168,9 +191,9 @@ function MainUI.Init(player: Player, RemoteController)
 	end
 
 	addNavButton("Roll", "🎲")
-	addNavButton("Index", "📖")
+	addNavButton("Index", "🐱")
 	addNavButton("Rebirth", "✦")
-	addNavButton("Shop", "🛒")
+	addNavButton("Shop", "🛍️")
 	addNavButton("Quests", "📜")
 
 	panels["Roll"] = RollPanel.Create(panelContainer, state, RemoteController, notification)
@@ -181,11 +204,24 @@ function MainUI.Init(player: Player, RemoteController)
 
 	showPanel("Roll")
 
-	local dailyRewardPopup = DailyRewardPopup.Create(screenGui, RemoteController)
+	local dailyRewardPopup = DailyRewardPopup.Create(screenGui, RemoteController, notification)
 
-	local function refreshTopBar()
-		coinsLabel.Text = "🪙 " .. MainUI.FormatNumber(state.Coins)
-		rebirthsLabel.Text = "✦ Rebirths: " .. tostring(state.Rebirths)
+	local function refreshTopBar(previousCoins: number?, previousRebirths: number?)
+		if previousCoins ~= nil and previousCoins ~= state.Coins then
+			Effects.CountUpNumber(coinsLabel, previousCoins, state.Coins, function(n)
+				return "🪙 " .. MainUI.FormatNumber(n)
+			end, 0.5)
+		else
+			coinsLabel.Text = "🪙 " .. MainUI.FormatNumber(state.Coins)
+		end
+
+		if previousRebirths ~= nil and previousRebirths ~= state.Rebirths then
+			Effects.CountUpNumber(rebirthsLabel, previousRebirths, state.Rebirths, function(n)
+				return "✦ Rebirths: " .. tostring(math.floor(n))
+			end, 0.5)
+		else
+			rebirthsLabel.Text = "✦ Rebirths: " .. tostring(state.Rebirths)
+		end
 
 		local title = state.EquippedTitle and titleById[state.EquippedTitle]
 		if title then
@@ -198,17 +234,21 @@ function MainUI.Init(player: Player, RemoteController)
 		end
 	end
 
-	RemoteController.OnDataSync:Connect(function(data)
+	local function applySync(data)
+		local previousCoins = state.Coins
+		local previousRebirths = state.Rebirths
 		for key, value in data do
 			state[key] = value
 		end
-		refreshTopBar()
+		refreshTopBar(previousCoins, previousRebirths)
 		RollPanel.Refresh(state)
 		IndexPanel.Refresh(state)
 		RebirthPanel.Refresh(state)
 		ShopPanel.Refresh(state)
 		QuestPanel.Refresh(state)
-	end)
+	end
+
+	RemoteController.OnDataSync:Connect(applySync)
 
 	RemoteController.OnNotify:Connect(function(payload)
 		notification.Show(payload.Message, payload.Type)
@@ -220,6 +260,17 @@ function MainUI.Init(player: Player, RemoteController)
 
 	RemoteController.OnRollResult:Connect(function(result)
 		RollPanel.PlayRollResult(result)
+	end)
+
+	-- The join-time DataSync push from the server is fire-and-forget: if this
+	-- client wasn't listening yet when it fired, that payload is gone for
+	-- good. Now that every listener above is wired up, pull the current data
+	-- directly so the UI is always correct regardless of how that race went.
+	task.spawn(function()
+		local initialData = RemoteController.RequestSync()
+		if initialData then
+			applySync(initialData)
+		end
 	end)
 end
 

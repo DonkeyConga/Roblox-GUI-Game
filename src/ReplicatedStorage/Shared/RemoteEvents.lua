@@ -7,8 +7,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RemoteEvents = {}
 
 local EVENT_NAMES = { "DataSync", "RollResult", "Notify", "ShowDailyReward" }
-local FUNCTION_NAMES =
-	{ "RollTitle", "Rebirth", "EquipTitle", "ToggleAutoRoll", "ClaimDailyStreak", "ClaimQuest", "BuyVIP" }
+local FUNCTION_NAMES = {
+	"RollTitle",
+	"Rebirth",
+	"EquipTitle",
+	"ToggleAutoRoll",
+	"ClaimDailyStreak",
+	"ClaimQuest",
+	"BuyVIP",
+	"RequestSync",
+}
 
 local function getOrCreateFolder(): Folder
 	local folder = ReplicatedStorage:FindFirstChild("Remotes")

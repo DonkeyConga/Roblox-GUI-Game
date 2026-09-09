@@ -9,7 +9,7 @@ local UIFactory = require(ReplicatedStorage.Shared.UIFactory)
 local DailyRewardPopup = {}
 local Theme = UIFactory.Theme
 
-function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController)
+function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController, notification)
 	local overlay = UIFactory.Frame({
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundColor3 = Color3.new(0, 0, 0),
@@ -31,7 +31,7 @@ function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController)
 	cardScale.Parent = card
 
 	UIFactory.Title({
-		Text = "🎁 Daily Reward!",
+		Text = "🎁 Daily Pusheen Reward!",
 		TextSize = 26,
 		Size = UDim2.new(1, 0, 0, 40),
 		Position = UDim2.new(0, 0, 0, 20),
@@ -76,6 +76,10 @@ function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController)
 			task.delay(0.2, function()
 				overlay.Visible = false
 			end)
+		elseif result.Reason == "AlreadyClaimed" then
+			overlay.Visible = false
+		elseif notification then
+			notification.Show("Couldn't claim your reward right now — try again.", "Danger")
 		end
 	end)
 

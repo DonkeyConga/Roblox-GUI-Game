@@ -1,27 +1,31 @@
 --!strict
--- "Arcane Royalty" theme: deep violet-black backdrops, gilded gold accents,
--- glowing rarity-tinted borders. Every panel builds from these helpers so a
--- single palette/behavior change here reshapes the whole game's look at once.
+-- "Pusheen" theme: warm cream/white backdrops, a blush-pink primary accent,
+-- a soft lavender secondary (Pusheenicorn-flavored), pastel rarity glows.
+-- Every panel builds from these helpers so a single palette/behavior change
+-- here reshapes the whole game's look at once. Field NAMES are kept stable
+-- across theme changes (Accent, AccentDark, Violet, TextOnGold, etc.) even
+-- though what they mean has shifted — that's what lets every panel file
+-- stay untouched while the whole game reskins from just this table.
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local UIFactory = {}
 
 UIFactory.Theme = {
-	Background = Color3.fromRGB(10, 8, 20),
-	BackgroundTop = Color3.fromRGB(26, 18, 48),
-	Panel = Color3.fromRGB(24, 19, 42),
-	PanelTop = Color3.fromRGB(35, 27, 58),
-	PanelLight = Color3.fromRGB(46, 36, 74),
-	Accent = Color3.fromRGB(255, 196, 84), -- gilded gold, the primary CTA color
-	AccentDark = Color3.fromRGB(197, 138, 32),
-	AccentPale = Color3.fromRGB(255, 232, 178),
-	Violet = Color3.fromRGB(168, 108, 255), -- secondary glow/magic color
-	Success = Color3.fromRGB(97, 219, 138),
-	Danger = Color3.fromRGB(255, 92, 92),
-	Text = Color3.fromRGB(246, 242, 255),
-	SubText = Color3.fromRGB(180, 170, 205),
-	TextOnGold = Color3.fromRGB(46, 28, 6),
+	Background = Color3.fromRGB(255, 248, 240),
+	BackgroundTop = Color3.fromRGB(255, 232, 236),
+	Panel = Color3.fromRGB(255, 255, 255),
+	PanelTop = Color3.fromRGB(255, 244, 247),
+	PanelLight = Color3.fromRGB(243, 231, 234),
+	Accent = Color3.fromRGB(244, 152, 175), -- Pusheen blush pink, the primary CTA color
+	AccentDark = Color3.fromRGB(219, 105, 140),
+	AccentPale = Color3.fromRGB(255, 214, 226),
+	Violet = Color3.fromRGB(178, 154, 224), -- soft lavender, Pusheenicorn-flavored secondary
+	Success = Color3.fromRGB(120, 200, 150),
+	Danger = Color3.fromRGB(230, 110, 110),
+	Text = Color3.fromRGB(75, 60, 65),
+	SubText = Color3.fromRGB(150, 130, 135),
+	TextOnGold = Color3.fromRGB(110, 40, 60), -- text sitting on the pink accent gradient
 	Font = Enum.Font.GothamBlack,
 	FontRegular = Enum.Font.Gotham,
 	FontMedium = Enum.Font.GothamMedium,
@@ -157,8 +161,8 @@ function UIFactory.Label(props: { [string]: any }?): TextLabel
 	return label
 end
 
--- A bold display headline with a soft outline — for panel titles and the big
--- roll-result reveal text.
+-- A bold display headline with a soft white "sticker" halo — for panel
+-- titles and the big roll-result reveal text.
 function UIFactory.Title(props: { [string]: any }?): TextLabel
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
@@ -166,13 +170,13 @@ function UIFactory.Title(props: { [string]: any }?): TextLabel
 	label.TextColor3 = Theme.Text
 	label.TextSize = 28
 	label.TextXAlignment = Enum.TextXAlignment.Center
-	label.TextStrokeTransparency = 0.6
-	label.TextStrokeColor3 = Color3.new(0, 0, 0)
+	label.TextStrokeTransparency = 0.5
+	label.TextStrokeColor3 = Color3.new(1, 1, 1)
 	applyProps(label, props)
 	return label
 end
 
--- The primary call-to-action button: a gilded gold gradient that brightens
+-- The primary call-to-action button: a blush-pink gradient that brightens
 -- and glows on hover. Use SetButtonState to swap it to success/disabled/danger.
 function UIFactory.Button(props: { [string]: any }?): TextButton
 	local button = Instance.new("TextButton")
@@ -363,7 +367,7 @@ function UIFactory.ProgressBar(container: Frame, initialFraction: number?): (Fra
 end
 
 -- A full-bleed backdrop gradient dropped in first so it sits behind everything
--- else in the ScreenGui, giving the whole game a moody arcane-twilight backdrop.
+-- else in the ScreenGui, giving the whole game a warm cream-to-blush backdrop.
 function UIFactory.Backdrop(screenGui: ScreenGui): Frame
 	local backdrop = UIFactory.Frame({
 		Size = UDim2.new(1, 0, 1, 0),

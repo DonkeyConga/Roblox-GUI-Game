@@ -28,8 +28,8 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 	layout.Parent = card
 
 	UIFactory.Title({
-		Text = "✦ Rebirth",
-		TextSize = 30,
+		Text = "✦ 9 Lives, 9 Rebirths",
+		TextSize = 28,
 		TextColor3 = Theme.Violet,
 		Size = UDim2.new(1, 0, 0, 40),
 		LayoutOrder = 1,
@@ -67,9 +67,13 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 	rebirthButton.MouseButton1Click:Connect(function()
 		local result = RemoteController.Rebirth()
 		if result.Success then
-			notification.Show(`Rebirthed! You are now Rebirth {result.Rebirths}.`, "Success")
-		else
+			notification.Show(`🐱 Rebirthed! You are now Rebirth {result.Rebirths}.`, "Success")
+		elseif result.Reason == "NotEnoughCoins" then
 			notification.Show(`You need {result.Requirement} coins to rebirth.`, "Danger")
+		elseif result.Reason == "NetworkError" then
+			notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
+		else
+			notification.Show("Couldn't rebirth right now — try again.", "Danger")
 		end
 	end)
 

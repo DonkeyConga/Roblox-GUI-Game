@@ -12,8 +12,10 @@ local DataService = require(script.Parent.DataService)
 local AchievementService = {}
 
 local titlesByRarity: { [string]: { any } } = {}
+local totalRollableTitles = 0
 for _, title in Titles do
 	if not title.Exclusive then
+		totalRollableTitles += 1
 		local list = titlesByRarity[title.Rarity]
 		if not list then
 			list = {}
@@ -45,6 +47,20 @@ local function hasDiscoveredRarity(data, rarityName: string): boolean
 	return false
 end
 
+-- Percentage (0-100) of all non-exclusive titles discovered so far.
+local function indexPercent(data): number
+	if totalRollableTitles == 0 then
+		return 0
+	end
+	local discovered = 0
+	for _, title in Titles do
+		if not title.Exclusive and data.DiscoveredTitles[title.Id] then
+			discovered += 1
+		end
+	end
+	return math.floor((discovered / totalRollableTitles) * 100)
+end
+
 local function isComplete(data, achievement): boolean
 	if achievement.Type == "RollCount" then
 		return data.RollCount >= achievement.Target
@@ -54,6 +70,12 @@ local function isComplete(data, achievement): boolean
 		return hasDiscoveredRarity(data, achievement.Rarity)
 	elseif achievement.Type == "RaritySet" then
 		return isRaritySetComplete(data, achievement.Rarity)
+	elseif achievement.Type == "IndexPercent" then
+		return indexPercent(data) >= achievement.Target
+	elseif achievement.Type == "LoginStreak" then
+		return data.LoginStreak >= achievement.Target
+	elseif achievement.Type == "OwnsVIP" then
+		return data.OwnsVIP == true
 	end
 	return false
 end
