@@ -52,7 +52,7 @@ function QuestService.RefreshIfNeeded(player: Player)
 	end
 end
 
--- questType matches a Quests.lua "Type" field: RollCount, DiscoverCount, CoinsEarned.
+-- questType matches a Quests.lua "Type" field: RollCount, DiscoverCount, TreatsEarned.
 -- `amount` is always a delta (this roll, this tick), never a lifetime total —
 -- daily quest progress must only count what happened since today's reset.
 function QuestService.ReportProgress(player: Player, questType: string, amount: number)
@@ -92,10 +92,10 @@ function QuestService.ClaimQuest(player: Player, questId: string)
 	end
 
 	data.Quests.Claimed[questId] = true
-	data.Coins += quest.Reward
+	data.Treats += quest.Reward
 	DataService.MarkDirty(player)
 
-	return { Success = true, Reward = quest.Reward, NewCoins = data.Coins }
+	return { Success = true, Reward = quest.Reward, NewTreats = data.Treats }
 end
 
 function QuestService.GetSnapshot(player: Player)

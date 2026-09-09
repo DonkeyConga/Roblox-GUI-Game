@@ -112,3 +112,45 @@ same locations as before:
   has the idle breathing pulse.
 - **`StarterPlayerScripts > Client > UI > Notification`** — nudged down
   slightly to clear the taller top bar.
+
+## Update 3: Coins renamed to Treats + a themed Leaderboard
+
+### One new script to add
+
+| Studio instance | Type | Parent | Paste from |
+|---|---|---|---|
+| `LeaderboardPanel` | ModuleScript | `StarterPlayerScripts > Client > UI` | `.../Client/UI/LeaderboardPanel.lua` |
+
+### Existing scripts to overwrite
+
+**`ReplicatedStorage > Shared`:** `Config`, `Quests`, `Effects` (adds
+`Effects.FormatNumber`, used by both the top bar and the new leaderboard).
+
+**`ServerScriptService > Server`:** `DataService`, `RollService`,
+`RebirthService`, `StreakService`, `QuestService`, `AchievementService`,
+`EconomyService`, `LeaderstatsService`, `Init` — the currency field is now
+`Treats` everywhere instead of `Coins`.
+
+**`StarterPlayerScripts > Client`:** `Init` (now disables Roblox's default
+player list), `UI > MainUI` (renamed + a new 6th "Leaders" tab wired to
+`LeaderboardPanel`), `UI > RollPanel`, `UI > RebirthPanel`, `UI > ShopPanel`,
+`UI > QuestPanel`, `UI > DailyRewardPopup` (all just renamed display text/emoji).
+
+### Your players' balances are safe
+
+If you already have live players, **don't worry about their saved balance** —
+`DataService` migrates the old `Coins` field to `Treats` automatically the
+first time each player's save loads under the new code. Nothing needs to be
+done manually, and this migration runs regardless of whether you use Rojo or
+built by hand.
+
+### The leaderboard
+
+Roblox's default top-right player list is now turned off
+(`StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)` in
+`Init.client.lua`) in favor of a themed **Leaders** tab: every player
+currently in the server, ranked by Treats, with medal icons for the top 3,
+their equipped title shown under their name, and the local player's own row
+permanently glowing so they can always find themselves. It reads the same
+`leaderstats` values Roblox already replicates to every client, so it needs
+no new remotes and updates automatically every 2 seconds.

@@ -89,7 +89,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	local _, setPityFraction = UIFactory.ProgressBar(pityBarContainer, 0)
 
 	local rollButton = UIFactory.Button({
-		Text = `🎲 ROLL — {Config.BaseRollCost} 🪙`,
+		Text = `🎲 ROLL — {Config.BaseRollCost} 🐟`,
 		TextSize = 26,
 		Size = UDim2.new(0, 280, 0, 70),
 		Position = UDim2.new(0.5, -140, 0, 230),
@@ -114,7 +114,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	})
 
 	local _hint = UIFactory.Label({
-		Text = "🐾 Tip: equip a title from the Index tab to boost your coin gain.",
+		Text = "🐾 Tip: equip a title from the Index tab to boost your treat gain.",
 		TextColor3 = Theme.SubText,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -181,8 +181,8 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	rollButton.MouseButton1Click:Connect(function()
 		local result = RemoteController.RollTitle()
 		if not result.Success then
-			if result.Reason == "NotEnoughCoins" then
-				notification.Show(`You need {result.Cost} coins to roll — {Config.BaseIdleCoinsPerSecond}/sec is coming in passively!`, "Danger")
+			if result.Reason == "NotEnoughTreats" then
+				notification.Show(`You need {result.Cost} treats to roll — {Config.BaseIdleTreatsPerSecond}/sec is coming in passively!`, "Danger")
 			elseif result.Reason == "NetworkError" then
 				notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
 			else
@@ -205,7 +205,7 @@ function RollPanel.Create(parent: Instance, state, RemoteController, notificatio
 	end)
 
 	function RollPanel.Refresh(newState)
-		rollButton.Text = `🎲 ROLL — {newState.RollCost} 🪙`
+		rollButton.Text = `🎲 ROLL — {newState.RollCost} 🐟`
 		pityLabel.Text = `Pity: {newState.RollsSincePity} / {Config.PityRollThreshold}`
 		setPityFraction(newState.RollsSincePity / Config.PityRollThreshold)
 		autoRollToggle.Text = newState.AutoRollEnabled and "Auto-Roll: ON" or "Enable Auto-Roll"

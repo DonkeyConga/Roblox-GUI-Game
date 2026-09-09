@@ -51,7 +51,7 @@ function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController, notific
 	})
 
 	local rewardLabel = UIFactory.Title({
-		Text = "🪙 100",
+		Text = "🐟 100",
 		TextSize = 40,
 		TextColor3 = Theme.Accent,
 		Size = UDim2.new(1, 0, 0, 60),
@@ -86,7 +86,7 @@ function DailyRewardPopup.Create(screenGui: ScreenGui, RemoteController, notific
 	local api = {}
 	function api.Show(info)
 		dayLabel.Text = `Day {info.Day} Streak`
-		rewardLabel.Text = `🪙 {info.Reward}`
+		rewardLabel.Text = `🐟 {info.Reward}`
 
 		overlay.Visible = true
 		overlay.BackgroundTransparency = 1

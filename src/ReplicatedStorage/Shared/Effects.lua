@@ -79,9 +79,25 @@ function Effects.SpawnConfetti(parent: GuiObject, position: UDim2, glyphs: { str
 	end
 end
 
+-- Compact display formatting shared by the top bar and the leaderboard
+-- (e.g. 12500 -> "12.50K") so both always agree on how big numbers read.
+function Effects.FormatNumber(n: number): string
+	n = math.floor(n)
+	if n >= 1e12 then
+		return string.format("%.2fT", n / 1e12)
+	elseif n >= 1e9 then
+		return string.format("%.2fB", n / 1e9)
+	elseif n >= 1e6 then
+		return string.format("%.2fM", n / 1e6)
+	elseif n >= 1e3 then
+		return string.format("%.2fK", n / 1e3)
+	end
+	return tostring(n)
+end
+
 -- Tweens a number displayed in `label` from its current value to `toValue`
 -- over `duration` seconds, calling `format` to turn each intermediate number
--- into display text. Used for the top-bar coin/rebirth counters so changes
+-- into display text. Used for the top-bar treats/rebirths counters so changes
 -- feel alive instead of snapping.
 function Effects.CountUpNumber(
 	label: TextLabel,

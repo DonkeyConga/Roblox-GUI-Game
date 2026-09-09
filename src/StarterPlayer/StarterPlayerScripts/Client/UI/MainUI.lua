@@ -1,6 +1,6 @@
 --!strict
 -- Builds the whole ScreenGui: ambient backdrop, an edge-to-edge top bar, a
--- floating bottom nav with a sliding highlight pill, and the five panels
+-- floating bottom nav with a sliding highlight pill, and the six panels
 -- filling the entire space between them. Owns the single `state` table that
 -- every panel reads from and that DataSync (or the RequestSync pull below)
 -- keeps up to date in place.
@@ -17,6 +17,7 @@ local IndexPanel = require(script.Parent.IndexPanel)
 local RebirthPanel = require(script.Parent.RebirthPanel)
 local ShopPanel = require(script.Parent.ShopPanel)
 local QuestPanel = require(script.Parent.QuestPanel)
+local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
 local DailyRewardPopup = require(script.Parent.DailyRewardPopup)
 local Notification = require(script.Parent.Notification)
 
@@ -36,20 +37,6 @@ for _, rarity in Rarities do
 	rarityByName[rarity.Name] = rarity
 end
 
-function MainUI.FormatNumber(n: number): string
-	n = math.floor(n)
-	if n >= 1e12 then
-		return string.format("%.2fT", n / 1e12)
-	elseif n >= 1e9 then
-		return string.format("%.2fB", n / 1e9)
-	elseif n >= 1e6 then
-		return string.format("%.2fM", n / 1e6)
-	elseif n >= 1e3 then
-		return string.format("%.2fK", n / 1e3)
-	end
-	return tostring(n)
-end
-
 function MainUI.Init(player: Player, RemoteController)
 	local playerGui = player:WaitForChild("PlayerGui")
 
@@ -62,7 +49,7 @@ function MainUI.Init(player: Player, RemoteController)
 	UIFactory.Backdrop(screenGui)
 
 	local state = {
-		Coins = 0,
+		Treats = 0,
 		Rebirths = 0,
 		EquippedTitle = nil,
 		DiscoveredTitles = {},
@@ -134,8 +121,8 @@ function MainUI.Init(player: Player, RemoteController)
 	})
 	Effects.Bob(pawIcon, 3, 1.4)
 
-	local coinsLabel = UIFactory.Label({
-		Text = "🪙 0",
+	local treatsLabel = UIFactory.Label({
+		Text = "🐟 0",
 		Font = Theme.FontDisplay,
 		TextColor3 = Theme.Accent,
 		TextSize = 26,
@@ -276,12 +263,14 @@ function MainUI.Init(player: Player, RemoteController)
 	addTabButton("Rebirth", "✦")
 	addTabButton("Shop", "🛍️")
 	addTabButton("Quests", "📜")
+	addTabButton("Leaders", "👑")
 
 	panels["Roll"] = RollPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Index"] = IndexPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Rebirth"] = RebirthPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Shop"] = ShopPanel.Create(panelContainer, state, RemoteController, notification)
 	panels["Quests"] = QuestPanel.Create(panelContainer, state, RemoteController, notification)
+	panels["Leaders"] = LeaderboardPanel.Create(panelContainer)
 
 	showPanel("Roll", false)
 	-- AbsolutePosition/AbsoluteSize on brand-new UIListLayout children aren't
@@ -294,13 +283,13 @@ function MainUI.Init(player: Player, RemoteController)
 
 	local dailyRewardPopup = DailyRewardPopup.Create(screenGui, RemoteController, notification)
 
-	local function refreshTopBar(previousCoins: number?, previousRebirths: number?)
-		if previousCoins ~= nil and previousCoins ~= state.Coins then
-			Effects.CountUpNumber(coinsLabel, previousCoins, state.Coins, function(n)
-				return "🪙 " .. MainUI.FormatNumber(n)
+	local function refreshTopBar(previousTreats: number?, previousRebirths: number?)
+		if previousTreats ~= nil and previousTreats ~= state.Treats then
+			Effects.CountUpNumber(treatsLabel, previousTreats, state.Treats, function(n)
+				return "🐟 " .. Effects.FormatNumber(n)
 			end, 0.5)
 		else
-			coinsLabel.Text = "🪙 " .. MainUI.FormatNumber(state.Coins)
+			treatsLabel.Text = "🐟 " .. Effects.FormatNumber(state.Treats)
 		end
 
 		if previousRebirths ~= nil and previousRebirths ~= state.Rebirths then
@@ -323,12 +312,12 @@ function MainUI.Init(player: Player, RemoteController)
 	end
 
 	local function applySync(data)
-		local previousCoins = state.Coins
+		local previousTreats = state.Treats
 		local previousRebirths = state.Rebirths
 		for key, value in data do
 			state[key] = value
 		end
-		refreshTopBar(previousCoins, previousRebirths)
+		refreshTopBar(previousTreats, previousRebirths)
 		RollPanel.Refresh(state)
 		IndexPanel.Refresh(state)
 		RebirthPanel.Refresh(state)

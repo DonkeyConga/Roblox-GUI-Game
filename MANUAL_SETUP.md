@@ -115,6 +115,7 @@ inside that, insert a **Folder** named `UI`.
 | `StarterPlayerScripts > Client > UI > RebirthPanel` | ModuleScript | `.../Client/UI/RebirthPanel.lua` |
 | `StarterPlayerScripts > Client > UI > ShopPanel` | ModuleScript | `.../Client/UI/ShopPanel.lua` |
 | `StarterPlayerScripts > Client > UI > QuestPanel` | ModuleScript | `.../Client/UI/QuestPanel.lua` |
+| `StarterPlayerScripts > Client > UI > LeaderboardPanel` | ModuleScript | `.../Client/UI/LeaderboardPanel.lua` |
 | `StarterPlayerScripts > Client > UI > DailyRewardPopup` | ModuleScript | `.../Client/UI/DailyRewardPopup.lua` |
 | `StarterPlayerScripts > Client > UI > Notification` | ModuleScript | `.../Client/UI/Notification.lua` |
 | `StarterPlayerScripts > Client > UI > OverheadTitle` | ModuleScript | `.../Client/UI/OverheadTitle.lua` |
@@ -137,6 +138,7 @@ StarterPlayer
             ├── RebirthPanel (ModuleScript)
             ├── ShopPanel (ModuleScript)
             ├── QuestPanel (ModuleScript)
+            ├── LeaderboardPanel (ModuleScript)
             ├── DailyRewardPopup (ModuleScript)
             ├── Notification (ModuleScript)
             └── OverheadTitle (ModuleScript)
@@ -146,9 +148,9 @@ StarterPlayer
 
 ## Checklist before you press Play
 
-- [ ] All 7 modules exist under `ReplicatedStorage > Shared`
+- [ ] All 8 modules exist under `ReplicatedStorage > Shared`
 - [ ] All 11 instances exist under `ServerScriptService > Server`, and `Init` is a **Script** (not a ModuleScript)
-- [ ] All 11 instances exist under `StarterPlayerScripts > Client` (incl. the `UI` subfolder), and `Init` is a **LocalScript**
+- [ ] All 12 instances exist under `StarterPlayerScripts > Client` (incl. the `UI` subfolder), and `Init` is a **LocalScript**
 - [ ] Every instance is named exactly as shown (no `.lua` in the name)
 - [ ] You pasted each file's *entire* contents, including the `--!strict` line at the top
 

@@ -1,5 +1,5 @@
 --!strict
--- The core RNG loop: spend coins, roll a weighted rarity, pick a title from
+-- The core RNG loop: spend treats, roll a weighted rarity, pick a title from
 -- that rarity's pool, track pity and discovery, and report side effects to
 -- quests/achievements/index bonuses.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -49,10 +49,10 @@ function RollService.GetLuckMultiplier(data): number
 	return luck
 end
 
-function RollService.GetCoinMultiplier(data): number
-	local mult = 1 + (data.Rebirths * Config.RebirthCoinBonusPerRebirth)
+function RollService.GetTreatMultiplier(data): number
+	local mult = 1 + (data.Rebirths * Config.RebirthTreatBonusPerRebirth)
 	if data.OwnsVIP then
-		mult *= Config.VIPCoinMultiplier
+		mult *= Config.VIPTreatMultiplier
 	end
 	if data.EquippedTitle then
 		for _, title in Titles do
@@ -122,11 +122,11 @@ function RollService.PerformRoll(player: Player)
 	end
 
 	local cost = RollService.GetRollCost(data)
-	if data.Coins < cost then
-		return { Success = false, Reason = "NotEnoughCoins", Cost = cost }
+	if data.Treats < cost then
+		return { Success = false, Reason = "NotEnoughTreats", Cost = cost }
 	end
 
-	data.Coins -= cost
+	data.Treats -= cost
 	data.RollsSincePity += 1
 
 	local luck = RollService.GetLuckMultiplier(data)
@@ -168,7 +168,7 @@ function RollService.PerformRoll(player: Player)
 		IsNew = isNew,
 		PityTriggered = pityTriggered,
 		RollsSincePity = data.RollsSincePity,
-		NewCoins = data.Coins,
+		NewTreats = data.Treats,
 		Cost = cost,
 		SetBonusGranted = setBonusGranted,
 	}

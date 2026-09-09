@@ -1,5 +1,5 @@
 --!strict
--- Passive coin income: a per-second tick for online players, plus a one-time
+-- Passive treat income: a per-second tick for online players, plus a one-time
 -- AFK grant on join covering the time they were away (capped and discounted).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,11 +26,11 @@ function EconomyService.GrantAFKGains(player: Player): number
 		return 0
 	end
 
-	local rate = Config.BaseIdleCoinsPerSecond * RollService.GetCoinMultiplier(data)
+	local rate = Config.BaseIdleTreatsPerSecond * RollService.GetTreatMultiplier(data)
 	local gained = math.floor(elapsed * rate * Config.AFKEfficiency)
 	if gained > 0 then
-		data.Coins += gained
-		QuestService.ReportProgress(player, "CoinsEarned", gained)
+		data.Treats += gained
+		QuestService.ReportProgress(player, "TreatsEarned", gained)
 		DataService.MarkDirty(player)
 	end
 	return gained
@@ -43,9 +43,9 @@ function EconomyService.Init()
 			for _, player in Players:GetPlayers() do
 				local data = DataService.Get(player)
 				if data then
-					local rate = Config.BaseIdleCoinsPerSecond * RollService.GetCoinMultiplier(data)
-					data.Coins += rate
-					QuestService.ReportProgress(player, "CoinsEarned", rate)
+					local rate = Config.BaseIdleTreatsPerSecond * RollService.GetTreatMultiplier(data)
+					data.Treats += rate
+					QuestService.ReportProgress(player, "TreatsEarned", rate)
 					data.LastSeen = os.time()
 				end
 			end

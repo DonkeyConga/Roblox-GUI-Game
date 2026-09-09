@@ -101,7 +101,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 				entryData.ClaimButton.MouseButton1Click:Connect(function()
 					local result = RemoteController.ClaimQuest(questInfo.Id)
 					if result.Success then
-						notification.Show(`🐾 Claimed {result.Reward} coins!`, "Success")
+						notification.Show(`🐾 Claimed {result.Reward} treats!`, "Success")
 					elseif result.Reason == "NotComplete" then
 						notification.Show("Not finished yet — keep going!", "Danger")
 					elseif result.Reason == "AlreadyClaimed" then
@@ -117,7 +117,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 			entryData.Entry.LayoutOrder = i
 
 			entryData.Desc.Text = questInfo.Description
-			entryData.ProgressLabel.Text = `{questInfo.Progress} / {questInfo.Target}  •  Reward: {questInfo.Reward} 🪙`
+			entryData.ProgressLabel.Text = `{questInfo.Progress} / {questInfo.Target}  •  Reward: {questInfo.Reward} 🐟`
 			entryData.SetFraction(questInfo.Progress / questInfo.Target)
 
 			if questInfo.Claimed then
@@ -164,7 +164,7 @@ function QuestPanel.Create(parent: Instance, state, RemoteController, notificati
 
 			rowData.Label.Text = (achievementInfo.Completed and "✓ " or "• ") .. achievementInfo.Description
 			rowData.Label.TextColor3 = achievementInfo.Completed and Theme.Success or Theme.SubText
-			rowData.RewardLabel.Text = tostring(achievementInfo.Reward) .. " 🪙"
+			rowData.RewardLabel.Text = tostring(achievementInfo.Reward) .. " 🐟"
 			rowData.RewardLabel.TextColor3 = achievementInfo.Completed and Theme.Accent or Theme.SubText
 			rowData.Row.BackgroundColor3 = achievementInfo.Completed and Theme.PanelLight or Theme.Panel
 		end

@@ -37,7 +37,7 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 	})
 
 	UIFactory.Label({
-		Text = "Reset your coins for a permanent boost to coin gain and luck.",
+		Text = "Reset your treats for a permanent boost to treat gain and luck.",
 		TextColor3 = Theme.SubText,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextWrapped = true,
@@ -57,7 +57,7 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 	})
 
 	local rebirthButton = UIFactory.Button({
-		Text = "Rebirth — Requires 0 🪙",
+		Text = "Rebirth — Requires 0 🐟",
 		TextSize = 22,
 		Size = UDim2.new(1, 0, 0, 64),
 		LayoutOrder = 4,
@@ -68,8 +68,8 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 		local result = RemoteController.Rebirth()
 		if result.Success then
 			notification.Show(`🐱 Rebirthed! You are now Rebirth {result.Rebirths}.`, "Success")
-		elseif result.Reason == "NotEnoughCoins" then
-			notification.Show(`You need {result.Requirement} coins to rebirth.`, "Danger")
+		elseif result.Reason == "NotEnoughTreats" then
+			notification.Show(`You need {result.Requirement} treats to rebirth.`, "Danger")
 		elseif result.Reason == "NetworkError" then
 			notification.Show("Couldn't reach the server — try again in a moment.", "Danger")
 		else
@@ -78,18 +78,18 @@ function RebirthPanel.Create(parent: Instance, state, RemoteController, notifica
 	end)
 
 	function RebirthPanel.Refresh(newState)
-		rebirthButton.Text = `Rebirth — Requires {newState.RebirthRequirement} 🪙`
+		rebirthButton.Text = `Rebirth — Requires {newState.RebirthRequirement} 🐟`
 
-		local coinBonus = newState.Rebirths * Config.RebirthCoinBonusPerRebirth * 100
+		local treatBonus = newState.Rebirths * Config.RebirthTreatBonusPerRebirth * 100
 		local luckBonus = newState.Rebirths * Config.RebirthLuckBonusPerRebirth * 100
-		local nextCoinBonus = coinBonus + (Config.RebirthCoinBonusPerRebirth * 100)
+		local nextTreatBonus = treatBonus + (Config.RebirthTreatBonusPerRebirth * 100)
 		local nextLuckBonus = luckBonus + (Config.RebirthLuckBonusPerRebirth * 100)
 
 		statsLabel.Text = string.format(
-			"Current: +%d%% coins, +%d%% luck\nNext rebirth: +%d%% coins, +%d%% luck",
-			coinBonus,
+			"Current: +%d%% treats, +%d%% luck\nNext rebirth: +%d%% treats, +%d%% luck",
+			treatBonus,
 			luckBonus,
-			nextCoinBonus,
+			nextTreatBonus,
 			nextLuckBonus
 		)
 	end

@@ -7,11 +7,11 @@ local Quests = {
 	{ Id = "roll_50", Description = "Roll 50 times", Type = "RollCount", Target = 50, Reward = 700 },
 	{ Id = "discover_2", Description = "Discover 2 new titles", Type = "DiscoverCount", Target = 2, Reward = 250 },
 	{ Id = "discover_5", Description = "Discover 5 new titles", Type = "DiscoverCount", Target = 5, Reward = 600 },
-	{ Id = "earn_500", Description = "Earn 500 coins", Type = "CoinsEarned", Target = 500, Reward = 150 },
-	{ Id = "earn_2000", Description = "Earn 2,000 coins", Type = "CoinsEarned", Target = 2000, Reward = 500 },
+	{ Id = "earn_500", Description = "Earn 500 treats", Type = "TreatsEarned", Target = 500, Reward = 150 },
+	{ Id = "earn_2000", Description = "Earn 2,000 treats", Type = "TreatsEarned", Target = 2000, Reward = 500 },
 	{ Id = "roll_100", Description = "Roll 100 times", Type = "RollCount", Target = 100, Reward = 1200 },
 	{ Id = "discover_1", Description = "Discover 1 new title", Type = "DiscoverCount", Target = 1, Reward = 120 },
-	{ Id = "earn_5000", Description = "Earn 5,000 coins", Type = "CoinsEarned", Target = 5000, Reward = 1000 },
+	{ Id = "earn_5000", Description = "Earn 5,000 treats", Type = "TreatsEarned", Target = 5000, Reward = 1000 },
 }
 
 return Quests

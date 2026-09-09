@@ -80,7 +80,7 @@ local function isComplete(data, achievement): boolean
 	return false
 end
 
--- Returns newly-completed achievements this call (their coin reward is already granted).
+-- Returns newly-completed achievements this call (their treat reward is already granted).
 function AchievementService.Check(player: Player)
 	local data = DataService.Get(player)
 	if not data then
@@ -90,7 +90,7 @@ function AchievementService.Check(player: Player)
 	for _, achievement in AchievementDefs do
 		if not data.Achievements[achievement.Id] and isComplete(data, achievement) then
 			data.Achievements[achievement.Id] = true
-			data.Coins += achievement.Reward
+			data.Treats += achievement.Reward
 			table.insert(newlyCompleted, achievement)
 		end
 	end

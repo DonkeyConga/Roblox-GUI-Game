@@ -19,18 +19,20 @@ which existing scripts to overwrite and which are brand new.
 
 ## Core loop
 
-1. Spend coins to **Roll** for a random Pusheen title (7 rarity tiers,
+1. Spend treats to **Roll** for a random Pusheen title (7 rarity tiers,
    weighted RNG, 106 possible titles).
-2. Equip a discovered title for a passive coin-gain multiplier and a
+2. Equip a discovered title for a passive treat-gain multiplier and a
    BillboardGui tag that follows you around the map.
-3. Spend enough coins to **Rebirth**: your coins reset to 0, but you keep a
-   permanent % boost to coin gain and luck forever. Costs grow every rebirth.
+3. Spend enough treats to **Rebirth**: your treats reset to 0, but you keep a
+   permanent % boost to treat gain and luck forever. Costs grow every rebirth.
 4. Fill in the **Index** (collection log) by discovering every title in a
    rarity tier for a small permanent luck bonus — with 25 Common titles alone,
    even the "easy" tier takes a while.
 5. Come back daily for a login-streak reward, work through daily quests, and
    chip away at 32 long-term achievements (roll counts, rebirth counts, full
    rarity-tier collections, Index completion %, login streaks, and VIP).
+6. Check the **Leaders** tab to see every player in the server ranked by
+   treats — a themed replacement for Roblox's default player list.
 
 ## Retention systems and where they live
 
@@ -43,6 +45,7 @@ which existing scripts to overwrite and which are brand new.
 | Daily login streak | `StreakService.lua` | `DailyRewardPopup.lua` |
 | Auto-Roll (online) + AFK gains (offline) | `AutoRollService.lua`, `EconomyService.lua` | `RollPanel.lua` (toggle) |
 | Daily quests + permanent achievements | `QuestService.lua`, `AchievementService.lua` | `QuestPanel.lua` |
+| Themed leaderboard (replaces Roblox's default) | `LeaderstatsService.lua` | `LeaderboardPanel.lua` |
 | Save data / DataStore | `DataService.lua` | — |
 | Animation helpers (confetti, burst rings, count-up, pop-in) | — | `Effects.lua` |
 
@@ -71,7 +74,7 @@ src/
     UI/
       MainUI.lua                     -- top bar, bottom nav, wires DataSync -> panels
       RollPanel.lua / IndexPanel.lua / RebirthPanel.lua / ShopPanel.lua / QuestPanel.lua
-      DailyRewardPopup.lua / Notification.lua / OverheadTitle.lua
+      LeaderboardPanel.lua / DailyRewardPopup.lua / Notification.lua / OverheadTitle.lua
 ```
 
 The entire GUI is built at runtime from Lua (no `.rbxmx`/`.rbxm` binary blobs), so
@@ -119,7 +122,7 @@ deliberate rounded pill rather than a bar clipped by the screen edge.
   discovered title keeps a permanent rarity-tinted border, and whichever one
   is currently equipped gets the same pulsing/rainbow glow treatment.
 - **Animation everywhere** (`Effects.lua`) — switching tabs pops the new panel
-  in with a little overshoot, the top-bar coins/rebirths count up instead of
+  in with a little overshoot, the top-bar treats/rebirths count up instead of
   snapping when they change, a paw icon gently bobs in the top bar, and
   notifications/the daily reward modal scale in with a bounce.
 - **Fonts** — `FontDisplay` (FredokaOne) for big reveal moments and reward
@@ -167,14 +170,14 @@ pull from `UIFactory.Theme`.
 
 Two real bugs made the game feel non-functional and are now fixed:
 
-1. **New players couldn't roll.** They started with 0 coins against a 50-coin
-   roll cost, so every click just silently failed with an easy-to-miss toast.
-   `Config.StartingCoins` is now 150 (3 free rolls up front).
+1. **New players couldn't roll.** They started with 0 currency against a
+   50-treat roll cost, so every click just silently failed with an
+   easy-to-miss toast. `Config.StartingTreats` is now 150 (3 free rolls up front).
 2. **A join-time race could permanently drop your data.** The server pushed
    your save once via a fire-and-forget event right after you joined; if your
    client wasn't listening yet (very plausible in Studio, especially with
    DataStores disabled), that payload — which is what populates the Quests
-   tab, your coins, everything — was gone for good, since nothing re-sent it
+   tab, your treats, everything — was gone for good, since nothing re-sent it
    until a successful roll (which bug #1 was also blocking). Fixed with a
    `RequestSync` request/response the client pulls once its own listeners are
    wired up, so it's never just hoping the server's push arrives in time.

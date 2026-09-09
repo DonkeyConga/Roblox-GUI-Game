@@ -54,7 +54,7 @@ function ShopPanel.Create(parent: Instance, state, RemoteController, notificatio
 	})
 
 	local perks = {
-		`{Config.VIPCoinMultiplier}x Coins earned`,
+		`{Config.VIPTreatMultiplier}x Treats earned`,
 		`{Config.VIPLuckMultiplier}x Luck on every roll`,
 		"Unlocks Auto-Roll immediately",
 		"Exclusive VIP Pusheen title",

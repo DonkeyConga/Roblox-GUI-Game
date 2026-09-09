@@ -1,5 +1,9 @@
 --!strict
--- Populates the built-in Roblox player list (top-right) with Coins/Rebirths.
+-- Populates a leaderstats folder (Treats/Rebirths) on the player. Roblox's
+-- default player-list rendering of this is turned off client-side (see
+-- Init.client.lua) in favor of the themed LeaderboardPanel, but the folder
+-- itself stays — it's the zero-cost convention other tools/analytics expect,
+-- and LeaderboardPanel reads these same replicated values directly.
 local DataService = require(script.Parent.DataService)
 
 local LeaderstatsService = {}
@@ -13,10 +17,10 @@ function LeaderstatsService.Create(player: Player)
 	local folder = Instance.new("Folder")
 	folder.Name = "leaderstats"
 
-	local coins = Instance.new("IntValue")
-	coins.Name = "Coins"
-	coins.Value = math.floor(data.Coins)
-	coins.Parent = folder
+	local treats = Instance.new("IntValue")
+	treats.Name = "Treats"
+	treats.Value = math.floor(data.Treats)
+	treats.Parent = folder
 
 	local rebirths = Instance.new("IntValue")
 	rebirths.Name = "Rebirths"
@@ -31,7 +35,7 @@ function LeaderstatsService.Create(player: Player)
 			if not DataService.Get(player) then
 				break
 			end
-			coins.Value = math.floor(data.Coins)
+			treats.Value = math.floor(data.Treats)
 			rebirths.Value = data.Rebirths
 		end
 	end)

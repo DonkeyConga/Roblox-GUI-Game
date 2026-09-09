@@ -17,7 +17,7 @@ local dirty: { [Player]: boolean } = {}
 
 local function defaultData()
 	return {
-		Coins = Config.StartingCoins,
+		Treats = Config.StartingTreats,
 		Rebirths = 0,
 		EquippedTitle = nil :: string?,
 		DiscoveredTitles = {} :: { [string]: boolean },
@@ -37,6 +37,17 @@ local function defaultData()
 		},
 		Achievements = {} :: { [string]: boolean },
 	}
+end
+
+-- The currency was renamed Coins -> Treats. Carries an existing player's
+-- balance over under the new field name instead of silently resetting it —
+-- without this, reconcile() below would just see `Treats` as missing and
+-- fill in the fresh-player default, discarding whatever they'd earned.
+local function migrateLegacyFields(data)
+	if data.Treats == nil and data.Coins ~= nil then
+		data.Treats = data.Coins
+	end
+	data.Coins = nil
 end
 
 -- Fills in any fields missing from an older save (e.g. after adding a new
@@ -60,6 +71,7 @@ function DataService.Load(player: Player)
 
 	local data
 	if success and result then
+		migrateLegacyFields(result)
 		data = reconcile(result, defaultData())
 	else
 		data = defaultData()

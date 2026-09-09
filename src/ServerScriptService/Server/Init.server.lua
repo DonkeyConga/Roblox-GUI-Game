@@ -47,7 +47,7 @@ local function buildSyncPayload(player: Player)
 		return nil
 	end
 	return {
-		Coins = data.Coins,
+		Treats = data.Treats,
 		Rebirths = data.Rebirths,
 		EquippedTitle = data.EquippedTitle,
 		DiscoveredTitles = data.DiscoveredTitles,
@@ -97,7 +97,7 @@ Players.PlayerAdded:Connect(function(player: Player)
 	if afkGained > 0 then
 		notifyEvent:FireClient(player, {
 			Type = "Success",
-			Message = `Welcome back! You earned {afkGained} coins while away.`,
+			Message = `Welcome back! You earned {afkGained} treats while away.`,
 		})
 	end
 

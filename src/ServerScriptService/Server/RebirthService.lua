@@ -1,5 +1,5 @@
 --!strict
--- Rebirth: sacrifice all current coins for a permanent coin/luck multiplier.
+-- Rebirth: sacrifice all current treats for a permanent treat/luck multiplier.
 -- Titles, the Index, quests, and achievements are untouched — only currency resets.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -19,11 +19,11 @@ function RebirthService.PerformRebirth(player: Player)
 		return { Success = false }
 	end
 	local requirement = RebirthService.GetRequirement(data)
-	if data.Coins < requirement then
-		return { Success = false, Reason = "NotEnoughCoins", Requirement = requirement }
+	if data.Treats < requirement then
+		return { Success = false, Reason = "NotEnoughTreats", Requirement = requirement }
 	end
 
-	data.Coins = 0
+	data.Treats = 0
 	data.Rebirths += 1
 	data.AutoRollEnabled = false
 	DataService.MarkDirty(player)

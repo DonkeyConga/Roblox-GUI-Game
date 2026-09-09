@@ -47,10 +47,10 @@ function StreakService.Claim(player: Player)
 	data.LastLoginDate = today()
 
 	local reward = rewardForStreak(data.LoginStreak)
-	data.Coins += reward
+	data.Treats += reward
 	DataService.MarkDirty(player)
 
-	return { Success = true, Day = data.LoginStreak, Reward = reward, NewCoins = data.Coins }
+	return { Success = true, Day = data.LoginStreak, Reward = reward, NewTreats = data.Treats }
 end
 
 return StreakService
