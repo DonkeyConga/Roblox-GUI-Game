@@ -9,6 +9,93 @@ If you use **Rojo**, just `git pull` and reconnect — everything below happens
 automatically and you can stop reading here. The rest of this file is for a
 **manual (no-Rojo)** Studio build.
 
+## Everything that's changed (full summary)
+
+The sections below (Update 1, 2, 3) tell you exactly which Studio instance
+to paste each file into. This section is the other cut through the same
+changes — organized by *what it does* instead of *when it landed* — so you
+can see the whole picture in one place.
+
+### 🐛 Bug fixes
+- New players started with 0 currency against a 50-treat roll cost, so every
+  Roll click just silently failed — now starts with 150 (3 free rolls).
+- The server's one-time join data push could be lost if your client's
+  listener wasn't connected yet, silently dropping your coins/treats, the
+  Quests tab, everything. Fixed with a `RequestSync` pull the client makes
+  once it's actually ready, instead of only hoping the server's push arrives
+  in time.
+- Every server call from the client is now pcall-guarded, and every button
+  always shows *some* feedback on failure — no more silent dead clicks.
+
+### 🔤 Text & legibility (made more visually appealing and visible)
+- Every label's text color is now a darker, higher-contrast shade against
+  the cream/pastel backdrop, instead of the lighter tone it started with.
+- Every label now carries a subtle white "pop-stroke" behind its text by
+  default (`UIFactory.Label`) — barely visible on its own, but it keeps text
+  readable wherever it sits directly on the backdrop instead of a solid
+  white card.
+- Headlines and the big roll-reveal text (`UIFactory.Title`) got their
+  outline strengthened into a bolder white "sticker" halo, for the same
+  reason at a larger scale.
+- Top-bar text sizes were bumped up across the board (treats 22→26,
+  rebirths 20→22, equipped-title label 16→18) now that the full-bleed layout
+  gives them more room to breathe.
+- Numbers that change (treats, rebirths) now visibly count up instead of
+  snapping instantly, which itself makes the *change* easier to see and read,
+  not just the static number.
+
+### 🎨 Visual theme
+- Full palette flip from the original dark "Arcane Royalty" theme to a
+  warm cream/blush-pink/lavender **Pusheen** theme — one edit in
+  `UIFactory.Theme`, every panel updates automatically since none of them
+  hardcode colors.
+- Rarity colors (`Rarities.lua`) re-tuned to a pastel palette that reads
+  clearly on the new light cards.
+
+### 📐 Layout
+- The top bar and every panel now span the full screen edge-to-edge (no
+  side margins) — the whole screen is used, not just a boxed-in center column.
+- The bottom nav keeps a small floating margin on purpose, so it reads as a
+  deliberate rounded pill rather than a bar clipped by the screen edge.
+
+### ✨ Animation & polish
+- Every button spawns a Material-style ripple from the exact point you click.
+- Primary buttons (Roll, Rebirth, Claim, Purchase) sweep a diagonal light
+  shine across themselves on hover.
+- The Roll button — the single most important action — gets an endless,
+  gentle breathing pulse that pauses the instant you hover it.
+- Every card (roll reveal, hero cards, quest entries, nav bar) casts a soft
+  drop shadow automatically, for real depth instead of flat rectangles.
+- The bottom nav's active tab is a single highlight pill that glides between
+  buttons when you switch tabs, instead of each button independently
+  recoloring itself.
+- Switching tabs pops the new panel in with a little overshoot instead of
+  an instant snap.
+- Rolling Epic+ rarities triggers an expanding "burst ring" plus a little
+  paw/heart/star confetti pop; Secret-tier rolls cycle a full rainbow border.
+- A paw icon in the top bar gently bobs, just for cuteness.
+
+### 🐱 Content expansion
+- `Titles.lua` rewritten from ~30 generic titles to **106 Pusheen-variant
+  titles** across all 7 rarities — full Index completion is now a genuine
+  long-term goal.
+- `Achievements.lua` expanded from 10 to **32 achievements**, adding 3 new
+  achievement types (Index completion %, login streak, VIP ownership).
+- 3 new daily quest templates added to the rotation pool.
+
+### 🍬 Currency renamed: Coins → Treats
+Renamed everywhere — the save-data field, Config keys, remote payloads,
+error codes, all UI text and the icon (🪙 → 🐟). **Existing players' saved
+balances are preserved** — see **Update 3** below for how the migration works.
+
+### 👑 Themed leaderboard
+Roblox's default top-right player list is now disabled in favor of a new
+**Leaders** tab: every player in the server ranked by Treats, medal icons
+for the top 3, each player's equipped title shown under their name, and
+your own row permanently highlighted so you can always find yourself.
+
+---
+
 ## 1. One new script to add
 
 | Studio instance | Type | Parent | Paste from |
